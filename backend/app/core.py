@@ -28,7 +28,8 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_stt_model: str = "gpt-4o-mini-transcribe"
     openai_llm_model: str = "gpt-4.1-mini"
-    cors_origins: str = ""
+    # Hackathon demo default. Restrict this to the frontend origin before any real-data launch.
+    cors_origins: str = "*"
     max_audio_bytes: int = 25 * 1024 * 1024
     job_poll_seconds: float = 0.2
     case_report_timeout_seconds: int = 30
