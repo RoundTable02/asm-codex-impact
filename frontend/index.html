@@ -718,9 +718,22 @@ var CHANGE_META = {
    2. 유틸
    ============================================================ */
 function $(sel, root){ return (root||document).querySelector(sel); }
-function esc(v){
+function humanText(v){
   if(v===null||v===undefined) return "";
-  return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+  if(typeof v === "string" || typeof v === "number" || typeof v === "boolean") return String(v);
+  if(Array.isArray(v)) return v.map(humanText).filter(Boolean).join(", ");
+  if(typeof v === "object"){
+    var preferred = ["description","message","title","summary","reason","text","content","name","label","detail","value"];
+    for(var i=0;i<preferred.length;i++){
+      var value = v[preferred[i]];
+      if(value!==null && value!==undefined && value!=="") return humanText(value);
+    }
+    return Object.keys(v).map(function(key){ return key+": "+humanText(v[key]); }).filter(function(part){ return part.slice(-2)!==": "; }).join(" · ");
+  }
+  return "";
+}
+function esc(v){
+  return humanText(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
                   .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
 function fmtDate(iso){
@@ -2021,17 +2034,17 @@ function copyReport(){
   out.push("[사례회의 리포트] " + (state.client ? state.client.name : "내담자 #"+r.client_id));
   out.push("생성: " + (fmtDT(r.generated_at)||"") + " · 사용 상담: " + (r.consultation_ids||[]).map(function(i){return "#"+i;}).join(", "));
   out.push("");
-  out.push("■ 개요\n" + (rp.client_overview||"—"));
+  out.push("■ 개요\n" + (humanText(rp.client_overview)||"—"));
   out.push("");
   out.push("■ 최근 상태");
   CATS.forEach(function(c){
     var v = (rp.recent_status||{})[c.key] || [];
-    out.push("- " + c.label + ": " + (v.length ? v.join(", ") : "확인된 내용 없음"));
+    out.push("- " + c.label + ": " + (v.length ? v.map(humanText).filter(Boolean).join(", ") : "확인된 내용 없음"));
   });
   [["현재 위험신호", rp.current_risks], ["미해결 이슈", rp.unresolved_issues],
    ["지원 현황", rp.support_status], ["회의에서 논의할 내용", rp.discussion_points]].forEach(function(p){
     out.push(""); out.push("■ " + p[0]);
-    if((p[1]||[]).length) p[1].forEach(function(x,i){ out.push((i+1)+". "+x); });
+    if((p[1]||[]).length) p[1].forEach(function(x,i){ out.push((i+1)+". "+humanText(x)); });
     else out.push("확인된 내용 없음");
   });
   var text = out.join("\n");
