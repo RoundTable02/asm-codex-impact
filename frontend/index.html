@@ -1,0 +1,1103 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>이음노트 화면 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* ==========================================================================
+   이음노트 — 사회복지 상담 기록 도구 UI 시안
+   레퍼런스: weenote.kr (blue-600 #155DFC · 화이트 그라운드 · 8px 라운드 ·
+             굵은 국문 산세리프 · 좌측 다크 사이드바 앱 셸)
+   고유 축 : "AI는 초안까지, 확정은 사람이"
+             → 초안 = 점선 테두리 + 초안 칩 / 확정 = 실선 + 확정 시각 + 잠금
+   ========================================================================== */
+
+:root{
+  /* ground & ink */
+  --bg:#F5F7FB; --surface:#FFFFFF; --surface-2:#F8FAFC;
+  --line:#E6E9F0; --line-2:#D3D9E4;
+  --ink:#171717; --ink-2:#3F4756; --muted:#6B7280;
+
+  /* primary (weenote blue-600) */
+  --pri:#155DFC; --pri-hover:#0B48D0; --pri-ink:#FFFFFF;
+  --pri-wash:#EEF4FF; --pri-line:#C3D9FF;
+  --violet:#6D3FF0;
+
+  /* semantic */
+  --ok:#0E9F6E; --ok-wash:#E7F7F1;
+  --high:#DC2626; --high-wash:#FDECEC;
+  --med:#D97706; --med-wash:#FDF3E4;
+  --low:#64748B; --low-wash:#EEF1F5;
+
+  /* draft signal */
+  --draft-line:#9FC0FF; --draft-wash:#F4F8FF;
+
+  /* nav (dark rail) */
+  --nav-bg:#111827; --nav-bg-2:#1B2434; --nav-ink:#E6EAF2;
+  --nav-muted:#8792A6; --nav-line:#232D3E;
+
+  --sh-1:0 1px 2px rgba(16,24,40,.06);
+  --sh-2:0 1px 3px rgba(16,24,40,.06), 0 12px 28px -18px rgba(16,24,40,.45);
+  --r:8px; --r-lg:12px;
+  --sans:"Noto Sans KR", Pretendard, system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1117; --surface:#151B24; --surface-2:#1B222D;
+    --line:#252E3B; --line-2:#35404F;
+    --ink:#EAEEF4; --ink-2:#C2CAD6; --muted:#8B95A5;
+    --pri:#6EA3FF; --pri-hover:#8FB9FF; --pri-ink:#0D1117;
+    --pri-wash:#16233A; --pri-line:#2C4470; --violet:#A88BFF;
+    --ok:#4ADE9F; --ok-wash:#132A22;
+    --high:#F87171; --high-wash:#2C1717;
+    --med:#F0B252; --med-wash:#2C2214;
+    --low:#94A3B8; --low-wash:#1E252F;
+    --draft-line:#3A5580; --draft-wash:#141D2C;
+    --nav-bg:#0A0E14; --nav-bg-2:#141B25; --nav-ink:#E6EAF2;
+    --nav-muted:#7E8899; --nav-line:#1C2531;
+    --sh-1:0 1px 2px rgba(0,0,0,.5);
+    --sh-2:0 1px 3px rgba(0,0,0,.45), 0 12px 28px -18px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1117; --surface:#151B24; --surface-2:#1B222D;
+  --line:#252E3B; --line-2:#35404F;
+  --ink:#EAEEF4; --ink-2:#C2CAD6; --muted:#8B95A5;
+  --pri:#6EA3FF; --pri-hover:#8FB9FF; --pri-ink:#0D1117;
+  --pri-wash:#16233A; --pri-line:#2C4470; --violet:#A88BFF;
+  --ok:#4ADE9F; --ok-wash:#132A22;
+  --high:#F87171; --high-wash:#2C1717;
+  --med:#F0B252; --med-wash:#2C2214;
+  --low:#94A3B8; --low-wash:#1E252F;
+  --draft-line:#3A5580; --draft-wash:#141D2C;
+  --nav-bg:#0A0E14; --nav-bg-2:#141B25; --nav-ink:#E6EAF2;
+  --nav-muted:#7E8899; --nav-line:#1C2531;
+  --sh-1:0 1px 2px rgba(0,0,0,.5);
+  --sh-2:0 1px 3px rgba(0,0,0,.45), 0 12px 28px -18px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:14px; line-height:1.6; font-weight:400;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{margin:0; text-wrap:balance; line-height:1.32; font-weight:700}
+p{margin:0}
+ul,ol{margin:0; padding:0; list-style:none}
+button{font:inherit; color:inherit; background:none; border:none; cursor:pointer}
+:focus-visible{outline:2px solid var(--pri); outline-offset:2px; border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{animation:none !important; transition:none !important}}
+.mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+.dim{color:var(--muted)}
+.eyebrow{
+  font-family:var(--mono); font-size:10px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--muted); font-weight:500;
+}
+.hr{height:1px; background:var(--line); border:none; margin:0}
+.stack{display:flex; flex-direction:column; gap:16px}
+.row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.spacer{margin-left:auto}
+
+/* ============ 앱 셸 ============ */
+.app{display:grid; grid-template-columns:238px minmax(0,1fr); min-height:100vh}
+.nav{
+  background:var(--nav-bg); color:var(--nav-ink);
+  display:flex; flex-direction:column; gap:4px; padding:0 12px 16px;
+  position:sticky; top:0; height:100vh; overflow-y:auto;
+}
+.nav__brand{padding:20px 10px 18px; display:flex; align-items:center; gap:10px}
+.nav__logo{
+  width:30px; height:30px; border-radius:9px; flex-shrink:0;
+  background:linear-gradient(135deg, #155DFC 0%, #6D3FF0 100%);
+  display:grid; place-items:center; color:#fff; font-weight:900; font-size:14px;
+}
+.nav__name{font-size:17px; font-weight:900; letter-spacing:-.02em}
+.nav__name small{display:block; font-size:10px; font-weight:400; color:var(--nav-muted); letter-spacing:0}
+.nav__sec{
+  padding:16px 10px 6px; font-family:var(--mono); font-size:9.5px;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--nav-muted);
+}
+.navlink{
+  display:flex; align-items:center; gap:10px; width:100%;
+  padding:9px 10px; border-radius:var(--r); font-size:13.5px; font-weight:500;
+  color:var(--nav-muted); transition:background .14s, color .14s;
+}
+.navlink:hover{background:var(--nav-bg-2); color:var(--nav-ink)}
+.navlink[aria-current="page"]{background:var(--pri); color:#fff}
+.navlink .ic{width:16px; text-align:center; font-size:13px; flex-shrink:0}
+.navlink .cnt{
+  margin-left:auto; font-family:var(--mono); font-size:10.5px;
+  background:rgba(255,255,255,.1); padding:1px 6px; border-radius:999px;
+}
+.navlink[aria-current="page"] .cnt{background:rgba(255,255,255,.22)}
+.nav__foot{margin-top:auto; padding-top:14px; border-top:1px solid var(--nav-line)}
+.nav__me{display:flex; align-items:center; gap:9px; padding:8px 10px; font-size:12.5px}
+.nav__me .av{
+  width:28px; height:28px; border-radius:50%; background:var(--nav-bg-2);
+  display:grid; place-items:center; font-size:11px; font-weight:700; color:var(--nav-ink);
+}
+.nav__me small{display:block; color:var(--nav-muted); font-size:10.5px}
+
+.main{display:flex; flex-direction:column; min-width:0}
+.topbar{
+  position:sticky; top:0; z-index:10;
+  display:flex; align-items:center; gap:14px; padding:0 24px; height:58px;
+  background:var(--surface); border-bottom:1px solid var(--line);
+}
+.crumb{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); min-width:0}
+.crumb b{color:var(--ink); font-weight:700}
+.crumb i{font-style:normal; color:var(--line-2)}
+.content{padding:22px 24px 44px; max-width:1460px; width:100%}
+
+@media (max-width:1080px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .nav{position:static; height:auto; flex-direction:row; align-items:center; flex-wrap:wrap; padding:10px 14px; gap:6px}
+  .nav__brand{padding:0 12px 0 0}
+  .nav__sec,.nav__foot{display:none}
+  .navlink{width:auto}
+}
+
+/* ============ 공통 UI ============ */
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-1)}
+.panel__head{display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line)}
+.panel__head h2{font-size:14px}
+.panel__body{padding:16px}
+.panel__body--flush{padding:0}
+
+.pagehead{display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom:18px}
+.pagehead h1{font-size:27px; font-weight:900; letter-spacing:-.025em}
+.pagehead h1 em{font-style:normal; color:var(--pri)}
+.pagehead .note{font-size:12.5px; color:var(--muted); margin-left:auto}
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  padding:8px 15px; border-radius:var(--r); font-size:13px; font-weight:500;
+  border:1px solid var(--line-2); background:var(--surface); color:var(--ink-2);
+  transition:background .14s, border-color .14s, color .14s;
+}
+.btn:hover{background:var(--surface-2); border-color:var(--muted)}
+.btn--primary{background:var(--pri); border-color:var(--pri); color:var(--pri-ink); font-weight:700}
+.btn--primary:hover{background:var(--pri-hover); border-color:var(--pri-hover)}
+.btn--ghost{border-color:transparent; background:transparent; color:var(--muted); padding:6px 9px}
+.btn--ghost:hover{background:var(--surface-2); color:var(--ink-2)}
+.btn--sm{padding:6px 11px; font-size:12.5px}
+.btn--block{width:100%}
+
+.search{
+  display:flex; align-items:center; gap:9px; min-width:0;
+  border:1px solid var(--line-2); background:var(--surface);
+  border-radius:var(--r); padding:8px 12px;
+}
+.search svg{flex-shrink:0; color:var(--muted)}
+.search input{border:none; background:none; font:inherit; color:var(--ink); width:100%; outline:none}
+.search input::placeholder{color:var(--muted)}
+
+.chip{
+  display:inline-flex; align-items:center; gap:5px; line-height:1.7;
+  padding:2px 9px; border-radius:999px; font-size:11px; font-weight:500;
+  border:1px solid transparent; white-space:nowrap;
+}
+.chip--high{background:var(--high-wash); color:var(--high); border-color:color-mix(in srgb,var(--high) 26%,transparent)}
+.chip--med{background:var(--med-wash); color:var(--med); border-color:color-mix(in srgb,var(--med) 26%,transparent)}
+.chip--low{background:var(--low-wash); color:var(--low); border-color:color-mix(in srgb,var(--low) 24%,transparent)}
+.chip--ok{background:var(--ok-wash); color:var(--ok); border-color:color-mix(in srgb,var(--ok) 28%,transparent)}
+.chip--pri{background:var(--pri-wash); color:var(--pri); border-color:var(--pri-line)}
+.chip--code{background:var(--surface-2); color:var(--muted); border-color:var(--line); font-family:var(--mono); font-size:10px; letter-spacing:.04em}
+.chip--draft{background:var(--draft-wash); color:var(--pri); border:1px dashed var(--draft-line); font-size:10.5px; font-weight:500}
+.dot{width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0}
+
+/* ============ 표 ============ */
+.tablewrap{overflow-x:auto}
+table{width:100%; border-collapse:collapse; font-size:13px}
+thead th{
+  text-align:left; padding:10px 16px; font-family:var(--mono);
+  font-size:10px; font-weight:500; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--muted); border-bottom:1px solid var(--line); white-space:nowrap; background:var(--surface-2);
+}
+tbody td{padding:12px 16px; border-bottom:1px solid var(--line); vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{cursor:pointer; transition:background .12s}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr.is-current{background:var(--pri-wash)}
+td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+.who{display:flex; align-items:center; gap:11px}
+.ini{
+  width:34px; height:34px; border-radius:10px; flex-shrink:0;
+  background:var(--pri-wash); color:var(--pri); border:1px solid var(--pri-line);
+  display:grid; place-items:center; font-size:14px; font-weight:700;
+}
+.who .nm{font-weight:700; font-size:13.5px}
+.who .meta{font-size:11.5px; color:var(--muted)}
+
+/* ============ 목록 요약 ============ */
+.minilist li{display:flex; gap:10px; align-items:baseline; padding:11px 16px; border-bottom:1px solid var(--line); font-size:12.5px}
+.minilist li:last-child{border-bottom:none}
+.minilist .when{font-family:var(--mono); font-size:11px; color:var(--muted); width:60px; flex-shrink:0}
+.principle{display:flex; flex-direction:column; gap:8px; font-size:12px; color:var(--muted); line-height:1.6}
+.principle li{display:grid; grid-template-columns:12px minmax(0,1fr); gap:8px}
+.principle li::before{content:"✓"; color:var(--pri); font-size:10px}
+
+/* ============ 레이아웃 그리드 ============ */
+.cols{display:grid; gap:18px}
+.cols--list{grid-template-columns:minmax(0,1fr) 300px}
+.cols--detail{grid-template-columns:308px minmax(0,1fr)}
+.cols--work{grid-template-columns:242px minmax(0,1fr) 290px}
+@media (max-width:1240px){.cols--work{grid-template-columns:242px minmax(0,1fr)}}
+@media (max-width:980px){.cols--list,.cols--detail,.cols--work{grid-template-columns:minmax(0,1fr)}}
+
+/* ============ 단계 레일 ============ */
+.rail{padding:8px}
+.rail__t{padding:8px 10px 10px}
+.stage{display:flex; gap:11px; width:100%; padding:9px 10px; border-radius:var(--r); text-align:left; transition:background .14s}
+.stage:hover{background:var(--surface-2)}
+.stage[aria-current="true"]{background:var(--pri-wash)}
+.stage__gut{display:flex; flex-direction:column; align-items:center; width:18px; flex-shrink:0}
+.stage__b{
+  width:15px; height:15px; border-radius:50%; margin-top:3px; flex-shrink:0;
+  border:1.5px solid var(--line-2); background:var(--surface);
+  display:grid; place-items:center; font-size:9px; color:transparent;
+}
+.stage__l{flex:1; width:1.5px; background:var(--line); margin:3px 0 -12px}
+.stage:last-of-type .stage__l{display:none}
+.stage--done .stage__b{background:var(--ok); border-color:var(--ok); color:#fff}
+.stage--done .stage__l{background:var(--ok)}
+.stage--active .stage__b{border-color:var(--pri); border-width:4.5px}
+.stage--gate .stage__b{border-style:dashed; border-color:var(--draft-line)}
+.stage__n{font-size:12.5px; font-weight:500; line-height:1.45}
+.stage__c{display:block; font-family:var(--mono); font-size:9.5px; letter-spacing:.04em; color:var(--muted); margin-top:1px}
+.gate{
+  margin:2px 0 2px 29px; padding:3px 9px; border-radius:var(--r);
+  border:1px dashed var(--draft-line); background:var(--draft-wash);
+  font-size:10.5px; color:var(--pri); display:inline-block; font-weight:500;
+}
+
+/* ============ 작업 문서 ============ */
+.worktop{display:flex; align-items:center; gap:11px; flex-wrap:wrap; padding:14px 16px; border-bottom:1px solid var(--line)}
+.worktop h2{font-size:15.5px; font-weight:700}
+.doc{border-radius:var(--r-lg); padding:16px 18px; background:var(--surface-2); border:1px solid var(--line)}
+.doc--draft{background:var(--draft-wash); border:1.5px dashed var(--draft-line)}
+.doc__bar{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:-4px 0 13px}
+.banner{
+  display:flex; gap:11px; align-items:flex-start; font-size:12.5px; color:var(--ink-2);
+  border:1px solid var(--pri-line); background:var(--pri-wash);
+  border-radius:var(--r); padding:12px 15px;
+}
+.banner .bi{color:var(--pri); font-weight:700; flex-shrink:0}
+.banner b{color:var(--pri)}
+
+.transcript{display:flex; flex-direction:column; gap:13px; font-size:13.5px}
+.turn{display:grid; grid-template-columns:76px minmax(0,1fr); gap:14px; align-items:start}
+.turn__w{font-size:11px; color:var(--muted); font-weight:500; padding-top:2px; text-align:right}
+.turn--c .turn__w{color:var(--pri); font-weight:700}
+.turn__s{color:var(--ink-2)}
+.turn--c .turn__s{color:var(--ink)}
+.turn__s mark{background:color-mix(in srgb,var(--med) 26%,transparent); color:inherit; padding:1px 3px; border-radius:3px}
+
+.fieldset{display:flex; flex-direction:column; gap:16px}
+.flabel{display:flex; align-items:center; gap:8px; margin-bottom:8px}
+.flabel h3{font-size:12px; color:var(--ink-2); font-weight:700}
+.editable{border:1px solid transparent; border-radius:var(--r); padding:7px 9px; margin:-7px -9px; transition:background .14s, border-color .14s}
+.editable:hover{background:var(--surface); border-color:var(--line)}
+.bullets{display:flex; flex-direction:column; gap:7px; font-size:13.5px}
+.bullets li{display:grid; grid-template-columns:13px minmax(0,1fr); gap:8px; align-items:baseline}
+.bullets li::before{content:"—"; color:var(--muted); font-size:11px}
+
+.sgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(186px,1fr)); gap:9px}
+.sgrid > div{border:1px solid var(--line); border-radius:var(--r); padding:11px 12px; background:var(--surface); min-height:76px}
+.sgrid .k{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; font-family:var(--mono); font-size:9.5px; letter-spacing:.09em; color:var(--muted)}
+.sgrid .k b{font-family:var(--sans); font-size:11.5px; letter-spacing:0; color:var(--ink-2); font-weight:700}
+.sgrid .v{font-size:12.5px; color:var(--ink)}
+.sgrid .v.empty{color:var(--muted)}
+
+/* ============ 분석 결과 ============ */
+.change{display:grid; grid-template-columns:24px 96px minmax(0,1fr); gap:12px; align-items:center; padding:12px 4px; border-bottom:1px solid var(--line)}
+.change:last-child{border-bottom:none}
+.change__a{font-size:17px; line-height:1; text-align:center; font-weight:700}
+.change--worse .change__a{color:var(--high)}
+.change--better .change__a{color:var(--ok)}
+.change--unknown .change__a{color:var(--muted)}
+.change__c{font-size:12.5px; font-weight:700}
+.change__c small{display:block; font-family:var(--mono); font-size:9.5px; color:var(--muted); font-weight:400; letter-spacing:.05em}
+.change__m{display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:12.5px}
+.change__p{color:var(--muted); text-decoration:line-through; text-decoration-color:var(--line-2)}
+.change__t{color:var(--muted); font-size:11px}
+
+.risk{display:grid; grid-template-columns:4px minmax(0,1fr); gap:15px; overflow:hidden; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:14px 16px 14px 0}
+.risk__s{background:var(--low)}
+.risk--high .risk__s{background:var(--high)}
+.risk--med .risk__s{background:var(--med)}
+.risk__h{display:flex; align-items:center; gap:9px; margin-bottom:8px; flex-wrap:wrap}
+.risk__h h4{font-size:13.5px}
+.quote{font-size:14px; color:var(--ink-2); border-left:3px solid var(--pri-line); padding:3px 0 3px 13px; margin:9px 0}
+.risk__w{font-size:12px; color:var(--muted)}
+
+.actions{display:flex; flex-direction:column; gap:9px}
+.action{display:grid; grid-template-columns:20px minmax(0,1fr) auto; gap:12px; align-items:start; border:1px solid var(--line); border-radius:var(--r-lg); padding:13px 15px; background:var(--surface); cursor:pointer}
+.action__ck{width:17px; height:17px; border-radius:5px; border:1.5px solid var(--line-2); margin-top:2px; background:var(--surface); flex-shrink:0; display:grid; place-items:center; color:transparent; font-size:10px}
+.action.is-done{background:var(--surface-2)}
+.action.is-done .action__ck{background:var(--ok); border-color:var(--ok); color:#fff}
+.action.is-done .action__t{text-decoration:line-through; color:var(--muted)}
+.action__t{font-size:13.5px; font-weight:700; margin-bottom:3px}
+.action__r{font-size:12px; color:var(--muted)}
+.action__side{display:flex; flex-direction:column; align-items:flex-end; gap:5px}
+.action__d{font-family:var(--mono); font-size:11px; color:var(--muted)}
+
+/* ============ 타임라인 / 리포트 ============ */
+.tl{display:grid; grid-template-columns:80px 16px minmax(0,1fr); gap:0 12px}
+.tl__d{font-family:var(--mono); font-size:11.5px; color:var(--muted); padding:13px 0 0; text-align:right}
+.tl__g{display:flex; flex-direction:column; align-items:center}
+.tl__o{width:9px; height:9px; border-radius:50%; background:var(--pri); margin-top:17px; flex-shrink:0}
+.tl__l{width:1.5px; flex:1; background:var(--line)}
+.tl:last-child .tl__l{display:none}
+.tl__b{padding:12px 0 18px}
+.tl__b h4{font-size:13px; margin-bottom:3px}
+.tl__b p{font-size:12.5px; color:var(--muted)}
+
+.report{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:18px}
+.report h3{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:500; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--line)}
+.report ul,.report ol{display:flex; flex-direction:column; gap:8px; font-size:13px}
+.report li{display:grid; grid-template-columns:14px minmax(0,1fr); gap:8px; align-items:baseline}
+.report ul li::before{content:"—"; color:var(--muted); font-size:11px}
+.report ol{counter-reset:d}
+.report ol li{counter-increment:d}
+.report ol li::before{content:counter(d) "."; font-family:var(--mono); font-size:11px; color:var(--pri)}
+.overview{font-size:20px; font-weight:900; letter-spacing:-.02em; line-height:1.45}
+.overview small{display:block; font-size:12.5px; font-weight:400; color:var(--muted); margin-top:6px; letter-spacing:0}
+
+/* ============ 토큰 화면 ============ */
+.sw{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:11px}
+.sw > div{border:1px solid var(--line); border-radius:var(--r); overflow:hidden; background:var(--surface)}
+.sw .c{height:54px}
+.sw .m{padding:9px 11px; font-family:var(--mono); font-size:10.5px; color:var(--muted)}
+.sw .m b{display:block; font-family:var(--sans); font-size:12px; color:var(--ink); font-weight:700; letter-spacing:0}
+.typerow{display:flex; flex-direction:column; gap:18px}
+.typerow > div{display:grid; grid-template-columns:140px minmax(0,1fr); gap:16px; align-items:baseline}
+.typerow .lbl{font-family:var(--mono); font-size:10.5px; color:var(--muted); letter-spacing:.07em; line-height:1.5}
+.legend{display:flex; flex-wrap:wrap; gap:8px}
+
+/* 화면 전환 */
+.screen{display:none}
+.screen.is-active{display:block}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ 좌측 내비 ============ -->
+  <aside class="nav">
+    <div class="nav__brand">
+      <span class="nav__logo">이</span>
+      <span class="nav__name">이음노트<small>상담 기록 · 후속조치</small></span>
+    </div>
+
+    <div class="nav__sec">상담 업무</div>
+    <button class="navlink" aria-current="page" data-screen="list"><span class="ic">◉</span>내담자<span class="cnt">5</span></button>
+    <button class="navlink" data-screen="detail"><span class="ic">▤</span>내담자 상세</button>
+    <button class="navlink" data-screen="work"><span class="ic">◐</span>상담 처리<span class="cnt">2</span></button>
+    <button class="navlink" data-screen="report"><span class="ic">▦</span>사례회의 리포트</button>
+
+    <div class="nav__sec">참고</div>
+    <button class="navlink" data-screen="tokens"><span class="ic">◈</span>디자인 토큰</button>
+
+    <div class="nav__foot">
+      <div class="nav__me">
+        <span class="av">사</span>
+        <span>사회복지사<small>○○노인복지관</small></span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ 본문 ============ -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb"><span>이음노트</span><i>/</i><b id="crumb">내담자</b></div>
+      <div class="spacer"></div>
+      <div class="search" style="width:250px">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input type="search" placeholder="이름 또는 가명 검색" aria-label="내담자 검색">
+      </div>
+      <button class="btn btn--ghost btn--sm" id="themeToggle" title="라이트 / 다크 전환">◐ 테마</button>
+      <button class="btn btn--primary btn--sm">+ 내담자 등록</button>
+    </header>
+
+    <div class="content">
+
+      <!-- ==================== 1. 내담자 목록 ==================== -->
+      <section class="screen is-active" id="screen-list">
+        <div class="pagehead">
+          <h1>오늘 <em>3건</em>의 후속조치가 기다립니다</h1>
+          <span class="note">로그인 없이 기관 공용 데이터로 운영 · 표시되는 이름은 모두 가명</span>
+        </div>
+
+        <div class="cols cols--list">
+          <div class="panel">
+            <div class="panel__head">
+              <h2>관리 중인 내담자</h2>
+              <span class="chip chip--code">GET /clients</span>
+              <div class="spacer"></div>
+              <button class="btn btn--sm">전체</button>
+              <button class="btn btn--sm">위험신호 있음</button>
+            </div>
+            <div class="panel__body panel__body--flush">
+              <div class="tablewrap">
+                <table>
+                  <thead>
+                    <tr><th>내담자</th><th>마지막 상담</th><th>미완료 Action</th><th>위험신호</th><th>메모</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr class="is-current">
+                      <td><div class="who"><span class="ini">김</span><div><div class="nm">김OO</div><div class="meta">1945년생 · 81세 · 여성</div></div></div></td>
+                      <td class="num">2026-09-04</td>
+                      <td class="num">3</td>
+                      <td><span class="chip chip--high"><span class="dot"></span>HIGH 1건</span></td>
+                      <td class="dim">독거 / 딸 부산 거주</td>
+                    </tr>
+                    <tr>
+                      <td><div class="who"><span class="ini">박</span><div><div class="nm">박OO</div><div class="meta">1938년생 · 88세 · 남성</div></div></div></td>
+                      <td class="num">2026-08-28</td>
+                      <td class="num">2</td>
+                      <td><span class="chip chip--med"><span class="dot"></span>MEDIUM 2건</span></td>
+                      <td class="dim">독거 / 보행 보조기 사용</td>
+                    </tr>
+                    <tr>
+                      <td><div class="who"><span class="ini">이</span><div><div class="nm">이OO</div><div class="meta">1941년생 · 85세 · 여성</div></div></div></td>
+                      <td class="num">2026-08-22</td>
+                      <td class="num">0</td>
+                      <td class="dim">—</td>
+                      <td class="dim">며느리와 동거</td>
+                    </tr>
+                    <tr>
+                      <td><div class="who"><span class="ini">정</span><div><div class="nm">정OO</div><div class="meta">1950년생 · 76세 · 여성</div></div></div></td>
+                      <td class="num">2026-08-19</td>
+                      <td class="num">1</td>
+                      <td><span class="chip chip--low"><span class="dot"></span>LOW 1건</span></td>
+                      <td class="dim">경로당 정기 이용</td>
+                    </tr>
+                    <tr>
+                      <td><div class="who"><span class="ini">최</span><div><div class="nm">최OO</div><div class="meta">1944년생 · 82세 · 남성</div></div></div></td>
+                      <td class="num dim">상담 없음</td>
+                      <td class="num">0</td>
+                      <td class="dim">—</td>
+                      <td class="dim">신규 등록</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <aside class="stack">
+            <div class="panel">
+              <div class="panel__head"><h2>처리 중인 상담</h2><div class="spacer"></div><span class="chip chip--code">2</span></div>
+              <ul class="minilist">
+                <li><span class="when">09-04</span><span>김OO<br><span class="chip chip--draft" style="margin-top:5px">상담일지 검토 대기</span></span></li>
+                <li><span class="when">09-04</span><span>박OO<br><span class="chip chip--code" style="margin-top:5px">TRANSCRIBING</span></span></li>
+              </ul>
+            </div>
+
+            <div class="panel">
+              <div class="panel__head"><h2>오늘 처리할 일</h2></div>
+              <ul class="minilist">
+                <li><span class="when">오늘</span><span>김OO · 병원 동행 지원 가능 여부 확인</span></li>
+                <li><span class="when">오늘</span><span>박OO · 식사 배달 신청 결과 확인</span></li>
+                <li><span class="when">D-2</span><span>김OO · 식생활 상태 재확인</span></li>
+                <li><span class="when">D-5</span><span>정OO · 안부전화</span></li>
+              </ul>
+            </div>
+
+            <div class="panel">
+              <div class="panel__head"><h2>기록 원칙</h2></div>
+              <div class="panel__body">
+                <ul class="principle">
+                  <li>상담에서 확인되지 않은 사실은 만들지 않습니다.</li>
+                  <li>불명확한 정보는 <span class="mono">확인 필요</span> · <span class="mono">UNKNOWN</span>으로 표시합니다.</li>
+                  <li>의료·법률적 진단은 하지 않습니다.</li>
+                  <li>확정하기 전까지 모든 값은 초안입니다.</li>
+                </ul>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ==================== 2. 내담자 상세 ==================== -->
+      <section class="screen" id="screen-detail">
+        <div class="pagehead">
+          <h1>김OO</h1>
+          <span class="chip chip--code">GET /clients/1</span>
+          <span class="note">상태 요약 출처 · 2026-09-04 확정 상담</span>
+        </div>
+
+        <div class="cols cols--detail">
+          <aside class="stack">
+            <div class="panel">
+              <div class="panel__body stack">
+                <div class="row" style="gap:13px">
+                  <span class="ini" style="width:48px;height:48px;border-radius:14px;font-size:20px">김</span>
+                  <div>
+                    <div style="font-size:17px;font-weight:700">김OO</div>
+                    <div class="dim" style="font-size:12.5px">1945년생 · 81세 · 여성</div>
+                  </div>
+                </div>
+                <hr class="hr">
+                <div>
+                  <div class="eyebrow" style="margin-bottom:5px">메모</div>
+                  <div style="font-size:13px">독거 / 딸 부산 거주</div>
+                </div>
+                <button class="btn btn--primary btn--block">녹음 파일 업로드</button>
+                <button class="btn btn--block">사례회의 리포트 생성</button>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel__head"><h2>미완료 Action</h2><div class="spacer"></div><span class="chip chip--code">3</span></div>
+              <div class="panel__body actions">
+                <div class="action">
+                  <span class="action__ck">✓</span>
+                  <div><div class="action__t">병원 동행 지원 가능 여부 확인</div><div class="action__r">RESOURCE_REFERRAL</div></div>
+                  <div class="action__side"><span class="chip chip--high">높음</span><span class="action__d">09-07</span></div>
+                </div>
+                <div class="action">
+                  <span class="action__ck">✓</span>
+                  <div><div class="action__t">식생활 상태 재확인</div><div class="action__r">CHECK_NUTRITION</div></div>
+                  <div class="action__side"><span class="chip chip--high">높음</span><span class="action__d">09-07</span></div>
+                </div>
+                <div class="action">
+                  <span class="action__ck">✓</span>
+                  <div><div class="action__t">병원 방문 이후 상태 확인</div><div class="action__r">FOLLOW_UP_CALL</div></div>
+                  <div class="action__side"><span class="chip chip--med">보통</span><span class="action__d">09-14</span></div>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <div class="stack">
+            <div class="panel">
+              <div class="panel__head">
+                <h2>현재 상태</h2>
+                <span class="chip chip--ok"><span class="dot"></span>확정 기록 기준</span>
+                <div class="spacer"></div>
+                <span class="dim" style="font-size:11.5px">2026-09-04 상담</span>
+              </div>
+              <div class="panel__body">
+                <div class="sgrid">
+                  <div><div class="k"><b>건강</b>HEALTH</div><div class="v">무릎 통증 악화</div></div>
+                  <div><div class="k"><b>식생활</b>NUTRITION</div><div class="v">하루 한 끼 수준으로 식사 감소</div></div>
+                  <div><div class="k"><b>사회관계</b>SOCIAL</div><div class="v">외출 감소</div></div>
+                  <div><div class="k"><b>가족</b>FAMILY</div><div class="v">자녀 타지역 거주</div></div>
+                  <div><div class="k"><b>정서</b>EMOTION</div><div class="v empty">확인된 내용 없음</div></div>
+                  <div><div class="k"><b>주거</b>HOUSING</div><div class="v empty">확인된 내용 없음</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel__head"><h2>상담 이력</h2><div class="spacer"></div><span class="chip chip--code">3건</span></div>
+              <div class="panel__body panel__body--flush">
+                <div class="tablewrap">
+                  <table>
+                    <thead><tr><th>상담일</th><th>요약</th><th>상태</th><th>확정 시각</th></tr></thead>
+                    <tbody>
+                      <tr><td class="num">2026-09-04</td><td>무릎 통증 악화로 외출·식사 준비에 어려움을 호소함</td><td><span class="chip chip--ok"><span class="dot"></span>DONE</span></td><td class="num dim">10:45</td></tr>
+                      <tr><td class="num">2026-08-21</td><td>외출 빈도가 줄었다고 이야기함</td><td><span class="chip chip--ok"><span class="dot"></span>DONE</span></td><td class="num dim">14:12</td></tr>
+                      <tr><td class="num">2026-08-03</td><td>무릎 통증이 처음 확인됨</td><td><span class="chip chip--ok"><span class="dot"></span>DONE</span></td><td class="num dim">11:02</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 3. 상담 처리 ==================== -->
+      <section class="screen" id="screen-work">
+        <div class="pagehead">
+          <h1>상담 처리</h1>
+          <span class="chip chip--code">consultation #101 · 김OO</span>
+          <span class="note">왼쪽 단계를 눌러 화면을 확인하세요</span>
+        </div>
+
+        <div class="cols cols--work">
+          <aside class="panel rail">
+            <div class="rail__t"><div class="eyebrow">처리 단계</div></div>
+
+            <button class="stage stage--done" data-step="transcript">
+              <span class="stage__gut"><span class="stage__b">✓</span><span class="stage__l"></span></span>
+              <span><span class="stage__n">녹음 파일 업로드</span><span class="stage__c">UPLOADED</span></span>
+            </button>
+            <button class="stage stage--done" data-step="transcript">
+              <span class="stage__gut"><span class="stage__b">✓</span><span class="stage__l"></span></span>
+              <span><span class="stage__n">음성 → 텍스트 변환</span><span class="stage__c">TRANSCRIBING</span></span>
+            </button>
+            <button class="stage stage--gate" data-step="transcript" aria-current="true">
+              <span class="stage__gut"><span class="stage__b"></span><span class="stage__l"></span></span>
+              <span><span class="stage__n">전사문 검토</span><span class="stage__c">AWAITING_TRANSCRIPT_REVIEW</span></span>
+            </button>
+            <div class="gate">상담자 확정 필요</div>
+
+            <button class="stage" data-step="note">
+              <span class="stage__gut"><span class="stage__b"></span><span class="stage__l"></span></span>
+              <span><span class="stage__n">상담일지 초안 생성</span><span class="stage__c">GENERATING_NOTE</span></span>
+            </button>
+            <button class="stage stage--gate" data-step="note">
+              <span class="stage__gut"><span class="stage__b"></span><span class="stage__l"></span></span>
+              <span><span class="stage__n">상담일지 검토</span><span class="stage__c">AWAITING_NOTE_REVIEW</span></span>
+            </button>
+            <div class="gate">상담자 확정 필요</div>
+
+            <button class="stage" data-step="analysis">
+              <span class="stage__gut"><span class="stage__b"></span><span class="stage__l"></span></span>
+              <span><span class="stage__n">후속 분석</span><span class="stage__c">ANALYZING</span></span>
+            </button>
+            <button class="stage" data-step="analysis">
+              <span class="stage__gut"><span class="stage__b"></span></span>
+              <span><span class="stage__n">기록 완료</span><span class="stage__c">DONE</span></span>
+            </button>
+          </aside>
+
+          <div>
+            <!-- (a) 전사문 검토 -->
+            <div class="panel step" data-panel="transcript">
+              <div class="worktop">
+                <h2>전사문 검토</h2>
+                <span class="chip chip--draft">STT 초안</span>
+                <div class="spacer"></div>
+                <button class="btn btn--sm">수정 내용 저장</button>
+                <button class="btn btn--primary btn--sm">전사문 확정 · 상담일지 생성</button>
+              </div>
+              <div class="panel__body stack">
+                <div class="banner">
+                  <span class="bi">i</span>
+                  <span><b>확정하면 전사문은 수정할 수 없습니다.</b> 확정 시점에는 상담일지 초안 생성만 시작하며, 위험신호와 추천 Action은 아직 만들지 않습니다.</span>
+                </div>
+
+                <div class="doc doc--draft">
+                  <div class="doc__bar">
+                    <span class="eyebrow">2026-09-04 10:12 상담 · 8분 24초</span>
+                    <div class="spacer"></div>
+                    <span class="dim" style="font-size:11.5px">원본 음성은 전사 후 삭제됩니다</span>
+                  </div>
+                  <div class="transcript">
+                    <div class="turn"><span class="turn__w">사회복지사</span><span class="turn__s">요즘 식사는 잘하고 계세요?</span></div>
+                    <div class="turn turn--c"><span class="turn__w">김OO</span><span class="turn__s">요새 <mark>무릎이 아파서</mark> 뭘 해먹기가 힘들어요. <mark>라면 먹을 때가 많아요.</mark></span></div>
+                    <div class="turn"><span class="turn__w">사회복지사</span><span class="turn__s">병원은 가보셨어요?</span></div>
+                    <div class="turn turn--c"><span class="turn__w">김OO</span><span class="turn__s"><mark>다음 주에 가야 하는데 혼자 가기가 힘들어요.</mark></span></div>
+                    <div class="turn"><span class="turn__w">사회복지사</span><span class="turn__s">따님은 자주 오시나요?</span></div>
+                    <div class="turn turn--c"><span class="turn__w">김OO</span><span class="turn__s">부산에 있어서 명절에나 와요.</span></div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <span class="chip chip--code">PATCH /consultations/101/transcript</span>
+                  <span class="chip chip--code">POST /consultations/101/transcript/confirm</span>
+                  <span class="dim" style="font-size:11.5px">저장은 상태를 바꾸지 않습니다</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- (b) 상담일지 검토 -->
+            <div class="panel step" data-panel="note" hidden>
+              <div class="worktop">
+                <h2>상담일지 검토</h2>
+                <span class="chip chip--draft">AI 초안 · 수정 가능</span>
+                <div class="spacer"></div>
+                <button class="btn btn--sm">저장</button>
+                <button class="btn btn--primary btn--sm">상담일지 확정 · 분석 시작</button>
+              </div>
+              <div class="panel__body stack">
+                <div class="banner">
+                  <span class="bi">i</span>
+                  <span>여기서 <b>고친 내용이 그대로</b> 위험신호와 추천 Action의 근거가 됩니다. 지운 내용은 다시 살아나지 않습니다.</span>
+                </div>
+
+                <div class="doc doc--draft fieldset">
+                  <div>
+                    <div class="flabel"><h3>상담 요약</h3><span class="chip chip--draft">초안</span></div>
+                    <div class="editable" style="font-size:14px">대상자는 최근 무릎 통증이 심해져 외출 및 식사 준비에 어려움을 겪고 있다고 이야기함.</div>
+                  </div>
+                  <hr class="hr">
+                  <div>
+                    <div class="flabel"><h3>주요 상담 내용</h3><span class="chip chip--draft">초안 · 5항목</span></div>
+                    <ul class="bullets editable">
+                      <li>최근 무릎 통증 악화</li>
+                      <li>외출 빈도 감소</li>
+                      <li>식사 준비가 어려워 라면 등으로 대체</li>
+                      <li>다음 진료 방문 예정</li>
+                      <li>혼자 병원에 가는 데 어려움 호소</li>
+                    </ul>
+                  </div>
+                  <hr class="hr">
+                  <div>
+                    <div class="flabel"><h3>내담자 상태</h3><span class="chip chip--draft">초안 · 6개 항목 고정</span></div>
+                    <div class="sgrid">
+                      <div><div class="k"><b>건강</b>HEALTH</div><div class="v">무릎 통증 악화</div></div>
+                      <div><div class="k"><b>식생활</b>NUTRITION</div><div class="v">식사 준비 어려움</div></div>
+                      <div><div class="k"><b>사회관계</b>SOCIAL</div><div class="v">외출 감소</div></div>
+                      <div><div class="k"><b>가족</b>FAMILY</div><div class="v">자녀 타지역 거주</div></div>
+                      <div><div class="k"><b>정서</b>EMOTION</div><div class="v empty">확인된 내용 없음</div></div>
+                      <div><div class="k"><b>주거</b>HOUSING</div><div class="v empty">확인된 내용 없음</div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <span class="chip chip--code">PATCH /consultations/101/counseling-note</span>
+                  <span class="chip chip--code">POST /consultations/101/counseling-note/confirm</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- (c) 분석 결과 -->
+            <div class="panel step" data-panel="analysis" hidden>
+              <div class="worktop">
+                <h2>후속 분석 결과</h2>
+                <span class="chip chip--ok"><span class="dot"></span>확정 기록</span>
+                <div class="spacer"></div>
+                <span class="dim mono" style="font-size:11.5px">비교 상담 #99, #97</span>
+              </div>
+              <div class="panel__body stack">
+
+                <div>
+                  <div class="eyebrow" style="margin-bottom:10px">이번 상담에서 확인된 변화</div>
+                  <div>
+                    <div class="change change--worse">
+                      <span class="change__a">↓</span>
+                      <span class="change__c">건강<small>HEALTH · WORSENED</small></span>
+                      <span class="change__m"><span class="change__p">경미한 무릎 통증</span><span class="change__t">→</span><b>무릎 통증 악화</b></span>
+                    </div>
+                    <div class="change change--worse">
+                      <span class="change__a">↓</span>
+                      <span class="change__c">식생활<small>NUTRITION · WORSENED</small></span>
+                      <span class="change__m"><span class="change__p">식사 정상</span><span class="change__t">→</span><b>하루 한 끼 수준으로 식사 감소</b></span>
+                    </div>
+                    <div class="change change--worse">
+                      <span class="change__a">↓</span>
+                      <span class="change__c">사회관계<small>SOCIAL · WORSENED</small></span>
+                      <span class="change__m"><span class="change__p">외출 유지</span><span class="change__t">→</span><b>외출 감소</b></span>
+                    </div>
+                    <div class="change change--unknown">
+                      <span class="change__a">?</span>
+                      <span class="change__c">정서<small>EMOTION · UNKNOWN</small></span>
+                      <span class="change__m"><span class="dim">이번 상담에서 판단할 근거가 없어 확인이 필요합니다</span></span>
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="hr">
+
+                <div>
+                  <div class="eyebrow" style="margin-bottom:10px">위험신호 · 2건</div>
+                  <div class="stack" style="gap:10px">
+                    <div class="risk risk--med">
+                      <span class="risk__s"></span>
+                      <div>
+                        <div class="risk__h"><h4>식생활 상태 추가 확인 필요</h4><span class="chip chip--med">MEDIUM</span><span class="chip chip--code">NUTRITION</span></div>
+                        <blockquote class="quote">“라면 먹을 때가 많아요.”</blockquote>
+                        <p class="risk__w">최근 정상적인 식사를 준비하기 어려운 것으로 보이며 추가적인 확인이 필요합니다.</p>
+                      </div>
+                    </div>
+                    <div class="risk risk--med">
+                      <span class="risk__s"></span>
+                      <div>
+                        <div class="risk__h"><h4>건강 상태 악화 여부 확인 필요</h4><span class="chip chip--med">MEDIUM</span><span class="chip chip--code">HEALTH</span></div>
+                        <blockquote class="quote">“요새 무릎이 아파서 뭘 해먹기가 힘들어요.”</blockquote>
+                        <p class="risk__w">통증이 이전 상담보다 심해진 것으로 보이며 진료 결과 확인이 필요합니다.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="hr">
+
+                <div>
+                  <div class="eyebrow" style="margin-bottom:10px">미해결 이슈 · 3건</div>
+                  <ul class="bullets">
+                    <li>병원 이동 방법 미정</li>
+                    <li>식사지원 서비스 이용 여부 미정</li>
+                    <li>다음 진료 결과 확인 필요</li>
+                  </ul>
+                </div>
+
+                <hr class="hr">
+
+                <div>
+                  <div class="eyebrow" style="margin-bottom:10px">추천 Action · 3건</div>
+                  <div class="actions">
+                    <div class="action">
+                      <span class="action__ck">✓</span>
+                      <div><div class="action__t">병원 동행 지원 가능 여부 확인</div><div class="action__r">다음 주 진료 예정이나 혼자 이동하기 어렵다고 이야기함</div></div>
+                      <div class="action__side"><span class="chip chip--high">높음</span><span class="action__d">기한 09-07</span><span class="chip chip--code">RESOURCE_REFERRAL</span></div>
+                    </div>
+                    <div class="action">
+                      <span class="action__ck">✓</span>
+                      <div><div class="action__t">식생활 상태 재확인</div><div class="action__r">식사 준비의 어려움을 호소함</div></div>
+                      <div class="action__side"><span class="chip chip--high">높음</span><span class="action__d">기한 09-07</span><span class="chip chip--code">CHECK_NUTRITION</span></div>
+                    </div>
+                    <div class="action is-done">
+                      <span class="action__ck">✓</span>
+                      <div><div class="action__t">병원 방문 이후 상태 확인</div><div class="action__r">진료 결과에 따라 지원 계획을 조정할 필요가 있음</div></div>
+                      <div class="action__side"><span class="chip chip--ok">완료</span><span class="action__d">기한 09-14</span><span class="chip chip--code">FOLLOW_UP_CALL</span></div>
+                    </div>
+                  </div>
+                  <p class="dim" style="font-size:11.5px;margin-top:9px">추천일 뿐이며 최종 판단은 상담자가 합니다. 카드를 눌러 완료 처리할 수 있습니다.</p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <aside class="stack">
+            <div class="panel">
+              <div class="panel__head"><h2>이 내담자</h2></div>
+              <div class="panel__body stack" style="gap:12px">
+                <div>
+                  <div style="font-size:15px;font-weight:700">김OO</div>
+                  <div class="dim" style="font-size:12px">1945년생 · 81세 · 여성</div>
+                </div>
+                <div class="dim" style="font-size:12.5px">독거 / 딸 부산 거주</div>
+                <hr class="hr">
+                <div class="row" style="gap:22px">
+                  <div><div class="eyebrow">미완료 ACTION</div><div class="mono" style="font-size:20px;font-weight:700">3</div></div>
+                  <div><div class="eyebrow">누적 상담</div><div class="mono" style="font-size:20px;font-weight:700">3</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel__head"><h2>지난 상담</h2></div>
+              <ul class="minilist">
+                <li><span class="when">08-21</span><span>외출 빈도 감소</span></li>
+                <li><span class="when">08-03</span><span>무릎 통증 최초 확인</span></li>
+              </ul>
+            </div>
+
+            <div class="panel">
+              <div class="panel__head"><h2>상태 배지</h2></div>
+              <div class="panel__body">
+                <div class="legend">
+                  <span class="chip chip--code">UPLOADED</span>
+                  <span class="chip chip--code">TRANSCRIBING</span>
+                  <span class="chip chip--draft">검토 대기</span>
+                  <span class="chip chip--code">GENERATING_NOTE</span>
+                  <span class="chip chip--code">ANALYZING</span>
+                  <span class="chip chip--ok"><span class="dot"></span>DONE</span>
+                  <span class="chip chip--high"><span class="dot"></span>FAILED</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ==================== 4. 사례회의 리포트 ==================== -->
+      <section class="screen" id="screen-report">
+        <div class="pagehead">
+          <h1>사례회의 리포트</h1>
+          <span class="chip chip--code">POST /clients/1/case-report</span>
+          <span class="note">확정 상담 3건 종합 · 2026-09-04 11:20 생성</span>
+        </div>
+
+        <div class="cols cols--detail">
+          <aside class="stack">
+            <div class="panel">
+              <div class="panel__head"><h2>주요 변화 Timeline</h2></div>
+              <div class="panel__body">
+                <div class="tl">
+                  <span class="tl__d">08-03</span>
+                  <span class="tl__g"><span class="tl__o"></span><span class="tl__l"></span></span>
+                  <div class="tl__b"><h4>무릎 통증 최초 확인</h4><p>외출과 식사는 유지되던 시점</p></div>
+                </div>
+                <div class="tl">
+                  <span class="tl__d">08-21</span>
+                  <span class="tl__g"><span class="tl__o"></span><span class="tl__l"></span></span>
+                  <div class="tl__b"><h4>외출 감소</h4><p>통증으로 바깥 활동이 줄기 시작</p></div>
+                </div>
+                <div class="tl">
+                  <span class="tl__d">09-04</span>
+                  <span class="tl__g"><span class="tl__o"></span><span class="tl__l"></span></span>
+                  <div class="tl__b"><h4>식사 어려움 확인</h4><p>하루 한 끼 수준 · 병원 동행 필요</p></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel__head"><h2>내보내기</h2></div>
+              <div class="panel__body stack" style="gap:8px">
+                <button class="btn btn--block">회의 자료로 복사</button>
+                <button class="btn btn--block">인쇄용 보기</button>
+              </div>
+            </div>
+          </aside>
+
+          <div class="stack">
+            <div class="panel">
+              <div class="panel__body stack">
+                <div class="overview">
+                  김OO / 1945년생 / 독거
+                  <small>딸 부산 거주 · 정기 전화 상담 진행 중 (확정 상담 3건)</small>
+                </div>
+                <hr class="hr">
+                <div>
+                  <div class="eyebrow" style="margin-bottom:10px">최근 상태</div>
+                  <div class="sgrid">
+                    <div><div class="k"><b>건강</b>HEALTH</div><div class="v">무릎 통증이 최근 지속적으로 악화</div></div>
+                    <div><div class="k"><b>식생활</b>NUTRITION</div><div class="v">정상적인 식사 횟수 감소</div></div>
+                    <div><div class="k"><b>사회관계</b>SOCIAL</div><div class="v">외출 빈도 감소</div></div>
+                    <div><div class="k"><b>가족</b>FAMILY</div><div class="v">자녀 타지역 거주</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel__body report">
+                <div>
+                  <h3>현재 위험신호</h3>
+                  <ul><li>식생활 상태 추가 확인 필요</li><li>건강 상태 악화 여부 확인 필요</li></ul>
+                </div>
+                <div>
+                  <h3>미해결 이슈</h3>
+                  <ul><li>병원 이동 방법 미정</li><li>식사지원 서비스 이용 여부 미정</li><li>다음 진료 결과 확인 필요</li></ul>
+                </div>
+                <div>
+                  <h3>지원 현황</h3>
+                  <ul><li>정기 전화 상담 진행 중 (3건)</li></ul>
+                </div>
+                <div>
+                  <h3>회의에서 논의할 내용</h3>
+                  <ol><li>병원 동행 서비스 연계 여부</li><li>식사 지원 서비스 검토</li><li>상담 및 방문 빈도 조정 여부</li></ol>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 5. 디자인 토큰 ==================== -->
+      <section class="screen" id="screen-tokens">
+        <div class="pagehead">
+          <h1>디자인 토큰</h1>
+          <span class="note">프론트 레포에 그대로 옮길 수 있는 최소 세트 · weenote.kr 톤 기준</span>
+        </div>
+
+        <div class="stack">
+          <div class="panel">
+            <div class="panel__head"><h2>색</h2><div class="spacer"></div><span class="dim" style="font-size:11.5px">라이트 기준 · 다크는 토큰 값만 교체</span></div>
+            <div class="panel__body">
+              <div class="sw">
+                <div><div class="c" style="background:#155DFC"></div><div class="m"><b>Primary</b>#155DFC</div></div>
+                <div><div class="c" style="background:#6D3FF0"></div><div class="m"><b>Gradient end</b>#6D3FF0</div></div>
+                <div><div class="c" style="background:#EEF4FF;border-bottom:1px solid var(--line)"></div><div class="m"><b>Primary wash</b>#EEF4FF</div></div>
+                <div><div class="c" style="background:#171717"></div><div class="m"><b>본문</b>#171717</div></div>
+                <div><div class="c" style="background:#F5F7FB;border-bottom:1px solid var(--line)"></div><div class="m"><b>바탕</b>#F5F7FB</div></div>
+                <div><div class="c" style="background:#0E9F6E"></div><div class="m"><b>완료</b>#0E9F6E</div></div>
+                <div><div class="c" style="background:#DC2626"></div><div class="m"><b>HIGH</b>#DC2626</div></div>
+                <div><div class="c" style="background:#D97706"></div><div class="m"><b>MEDIUM</b>#D97706</div></div>
+                <div><div class="c" style="background:#64748B"></div><div class="m"><b>LOW</b>#64748B</div></div>
+                <div><div class="c" style="background:#111827"></div><div class="m"><b>사이드바</b>#111827</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2>글꼴</h2></div>
+            <div class="panel__body typerow">
+              <div>
+                <span class="lbl">DISPLAY<br>Noto Sans KR 900</span>
+                <span style="font-size:29px;font-weight:900;letter-spacing:-.025em">사회복지사는 어르신에게 <em style="font-style:normal;color:var(--pri)">집중합니다</em></span>
+              </div>
+              <div>
+                <span class="lbl">BODY / UI<br>Noto Sans KR 400·500·700</span>
+                <span style="font-size:15px">기록과 후속조치는 도구가 정리합니다. 상담일지 초안은 상담자가 확인하고 확정할 때 비로소 기록이 됩니다.</span>
+              </div>
+              <div>
+                <span class="lbl">DATA<br>IBM Plex Mono</span>
+                <span class="mono" style="font-size:14px">AWAITING_NOTE_REVIEW · 2026-09-04 · #101 · due 09-07</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2>초안과 확정의 구분</h2><div class="spacer"></div><span class="dim" style="font-size:11.5px">이 제품의 핵심 규칙</span></div>
+            <div class="panel__body">
+              <div class="row" style="gap:16px;align-items:stretch">
+                <div class="doc doc--draft" style="flex:1;min-width:260px">
+                  <div class="doc__bar"><span class="chip chip--draft">AI 초안</span></div>
+                  <div style="font-size:13px">점선 테두리 · 옅은 파랑 바탕 · 수정 가능<br><span class="dim">확정 전에는 어떤 값도 기록으로 취급하지 않습니다.</span></div>
+                </div>
+                <div class="doc" style="flex:1;min-width:260px">
+                  <div class="doc__bar"><span class="chip chip--ok"><span class="dot"></span>확정 · 09-04 10:45</span></div>
+                  <div style="font-size:13px">실선 테두리 · 수정 잠금 · 확정 시각 표기<br><span class="dim">확정된 내용만 위험신호·Action·리포트의 근거가 됩니다.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head"><h2>간격 · 라운드</h2></div>
+            <div class="panel__body">
+              <div class="row" style="gap:20px">
+                <span class="chip chip--code">radius 8 / 12</span>
+                <span class="chip chip--code">gap 8 / 10 / 16 / 18</span>
+                <span class="chip chip--code">content padding 22 / 24</span>
+                <span class="chip chip--code">sidebar 238px</span>
+                <span class="chip chip--code">max-width 1460px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var links = document.querySelectorAll('.navlink');
+  var screens = document.querySelectorAll('.screen');
+  var crumb = document.getElementById('crumb');
+  links.forEach(function(link){
+    link.addEventListener('click', function(){
+      links.forEach(function(l){ l.removeAttribute('aria-current'); });
+      link.setAttribute('aria-current','page');
+      crumb.textContent = link.textContent.replace(/[0-9]+$/,'').replace(/[◉▤◐▦◈]/g,'').trim();
+      screens.forEach(function(s){ s.classList.toggle('is-active', s.id === 'screen-' + link.dataset.screen); });
+      window.scrollTo(0,0);
+    });
+  });
+
+  var stages = document.querySelectorAll('.stage');
+  var panels = document.querySelectorAll('.step');
+  stages.forEach(function(stage){
+    stage.addEventListener('click', function(){
+      stages.forEach(function(s){ s.removeAttribute('aria-current'); });
+      stage.setAttribute('aria-current','true');
+      panels.forEach(function(p){ p.hidden = (p.dataset.panel !== stage.dataset.step); });
+    });
+  });
+
+  document.querySelectorAll('.action').forEach(function(a){
+    a.addEventListener('click', function(){ a.classList.toggle('is-done'); });
+  });
+
+  var root = document.documentElement;
+  document.getElementById('themeToggle').addEventListener('click', function(){
+    root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+})();
+</script>
+</body>
+</html>

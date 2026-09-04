@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# 환경 변수 / 시크릿
+.env
+.env.*
+
+# 로컬 DB
+*.db
+*.sqlite3
+
+# OS / 에디터
+.DS_Store
+.idea/
+.vscode/
+
+# Vercel
+.vercel/
