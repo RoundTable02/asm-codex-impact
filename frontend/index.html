@@ -3,15 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>이음노트 화면 시안</title>
+<title>이음노트</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <style>
 /* ==========================================================================
-   이음노트 — 사회복지 상담 기록 도구 UI 시안
-   레퍼런스: weenote.kr (blue-600 #155DFC · 화이트 그라운드 · 8px 라운드 ·
-             굵은 국문 산세리프 · 좌측 다크 사이드바 앱 셸)
+   이음노트 — 사회복지 상담 기록 도구
+   API: https://asm-codex-impact-production.up.railway.app
    고유 축 : "AI는 초안까지, 확정은 사람이"
              → 초안 = 점선 테두리 + 초안 칩 / 확정 = 실선 + 확정 시각 + 잠금
    ========================================================================== */
@@ -22,7 +21,7 @@
   --line:#E6E9F0; --line-2:#D3D9E4;
   --ink:#171717; --ink-2:#3F4756; --muted:#6B7280;
 
-  /* primary (weenote blue-600) */
+  /* primary */
   --pri:#155DFC; --pri-hover:#0B48D0; --pri-ink:#FFFFFF;
   --pri-wash:#EEF4FF; --pri-line:#C3D9FF;
   --violet:#6D3FF0;
@@ -42,9 +41,11 @@
 
   --sh-1:0 1px 2px rgba(16,24,40,.06);
   --sh-2:0 1px 3px rgba(16,24,40,.06), 0 12px 28px -18px rgba(16,24,40,.45);
+  --sh-3:0 24px 60px -20px rgba(16,24,40,.4);
   --r:8px; --r-lg:12px;
   --sans:"Noto Sans KR", Pretendard, system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
   --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --scrim:rgba(16,24,40,.42);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -62,6 +63,8 @@
     --nav-muted:#7E8899; --nav-line:#1C2531;
     --sh-1:0 1px 2px rgba(0,0,0,.5);
     --sh-2:0 1px 3px rgba(0,0,0,.45), 0 12px 28px -18px rgba(0,0,0,.9);
+    --sh-3:0 24px 60px -20px rgba(0,0,0,.9);
+    --scrim:rgba(3,6,12,.66);
   }
 }
 :root[data-theme="dark"]{
@@ -79,6 +82,8 @@
   --nav-muted:#7E8899; --nav-line:#1C2531;
   --sh-1:0 1px 2px rgba(0,0,0,.5);
   --sh-2:0 1px 3px rgba(0,0,0,.45), 0 12px 28px -18px rgba(0,0,0,.9);
+  --sh-3:0 24px 60px -20px rgba(0,0,0,.9);
+  --scrim:rgba(3,6,12,.66);
 }
 
 *{box-sizing:border-box}
@@ -104,6 +109,7 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
 .stack{display:flex; flex-direction:column; gap:16px}
 .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
 .spacer{margin-left:auto}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
 
 /* ============ 앱 셸 ============ */
 .app{display:grid; grid-template-columns:238px minmax(0,1fr); min-height:100vh}
@@ -127,10 +133,12 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
 .navlink{
   display:flex; align-items:center; gap:10px; width:100%;
   padding:9px 10px; border-radius:var(--r); font-size:13.5px; font-weight:500;
-  color:var(--nav-muted); transition:background .14s, color .14s;
+  color:var(--nav-muted); transition:background .14s, color .14s; text-align:left;
 }
 .navlink:hover{background:var(--nav-bg-2); color:var(--nav-ink)}
 .navlink[aria-current="page"]{background:var(--pri); color:#fff}
+.navlink:disabled{opacity:.42; cursor:not-allowed}
+.navlink:disabled:hover{background:none; color:var(--nav-muted)}
 .navlink .ic{width:16px; text-align:center; font-size:13px; flex-shrink:0}
 .navlink .cnt{
   margin-left:auto; font-family:var(--mono); font-size:10.5px;
@@ -144,6 +152,15 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
   display:grid; place-items:center; font-size:11px; font-weight:700; color:var(--nav-ink);
 }
 .nav__me small{display:block; color:var(--nav-muted); font-size:10.5px}
+.nav__api{
+  display:flex; align-items:center; gap:8px; padding:7px 10px; margin-top:4px;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.06em; color:var(--nav-muted);
+  border-radius:var(--r); background:var(--nav-bg-2);
+}
+.nav__api .sd{width:7px; height:7px; border-radius:50%; background:var(--med); flex-shrink:0}
+.nav__api.is-up .sd{background:#0E9F6E}
+.nav__api.is-down .sd{background:#DC2626}
+.nav__api span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 
 .main{display:flex; flex-direction:column; min-width:0}
 .topbar{
@@ -162,11 +179,13 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
   .nav__brand{padding:0 12px 0 0}
   .nav__sec,.nav__foot{display:none}
   .navlink{width:auto}
+  .topbar{flex-wrap:wrap; height:auto; padding:10px 16px; gap:10px}
+  .content{padding:18px 16px 40px}
 }
 
 /* ============ 공통 UI ============ */
 .panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-1)}
-.panel__head{display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line)}
+.panel__head{display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap}
 .panel__head h2{font-size:14px}
 .panel__body{padding:16px}
 .panel__body--flush{padding:0}
@@ -180,15 +199,19 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
   display:inline-flex; align-items:center; justify-content:center; gap:7px;
   padding:8px 15px; border-radius:var(--r); font-size:13px; font-weight:500;
   border:1px solid var(--line-2); background:var(--surface); color:var(--ink-2);
-  transition:background .14s, border-color .14s, color .14s;
+  transition:background .14s, border-color .14s, color .14s; white-space:nowrap;
 }
-.btn:hover{background:var(--surface-2); border-color:var(--muted)}
+.btn:hover:not(:disabled){background:var(--surface-2); border-color:var(--muted)}
 .btn--primary{background:var(--pri); border-color:var(--pri); color:var(--pri-ink); font-weight:700}
-.btn--primary:hover{background:var(--pri-hover); border-color:var(--pri-hover)}
+.btn--primary:hover:not(:disabled){background:var(--pri-hover); border-color:var(--pri-hover)}
+.btn--danger{border-color:color-mix(in srgb,var(--high) 40%,transparent); color:var(--high)}
+.btn--danger:hover:not(:disabled){background:var(--high-wash); border-color:var(--high)}
 .btn--ghost{border-color:transparent; background:transparent; color:var(--muted); padding:6px 9px}
-.btn--ghost:hover{background:var(--surface-2); color:var(--ink-2)}
+.btn--ghost:hover:not(:disabled){background:var(--surface-2); color:var(--ink-2)}
 .btn--sm{padding:6px 11px; font-size:12.5px}
 .btn--block{width:100%}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.btn.is-on{background:var(--pri-wash); border-color:var(--pri-line); color:var(--pri); font-weight:700}
 
 .search{
   display:flex; align-items:center; gap:9px; min-width:0;
@@ -212,6 +235,8 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
 .chip--code{background:var(--surface-2); color:var(--muted); border-color:var(--line); font-family:var(--mono); font-size:10px; letter-spacing:.04em}
 .chip--draft{background:var(--draft-wash); color:var(--pri); border:1px dashed var(--draft-line); font-size:10.5px; font-weight:500}
 .dot{width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0}
+.dot--pulse{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
 /* ============ 표 ============ */
 .tablewrap{overflow-x:auto}
@@ -223,8 +248,8 @@ thead th{
 }
 tbody td{padding:12px 16px; border-bottom:1px solid var(--line); vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
-tbody tr{cursor:pointer; transition:background .12s}
-tbody tr:hover{background:var(--surface-2)}
+tbody tr.clickable{cursor:pointer; transition:background .12s}
+tbody tr.clickable:hover{background:var(--surface-2)}
 tbody tr.is-current{background:var(--pri-wash)}
 td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
 .who{display:flex; align-items:center; gap:11px}
@@ -236,10 +261,15 @@ td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:n
 .who .nm{font-weight:700; font-size:13.5px}
 .who .meta{font-size:11.5px; color:var(--muted)}
 
+.pager{display:flex; align-items:center; gap:10px; padding:12px 16px; border-top:1px solid var(--line); font-size:12.5px; color:var(--muted)}
+
 /* ============ 목록 요약 ============ */
 .minilist li{display:flex; gap:10px; align-items:baseline; padding:11px 16px; border-bottom:1px solid var(--line); font-size:12.5px}
 .minilist li:last-child{border-bottom:none}
 .minilist .when{font-family:var(--mono); font-size:11px; color:var(--muted); width:60px; flex-shrink:0}
+.minilist button.mi{display:flex; gap:10px; align-items:baseline; width:100%; text-align:left; padding:11px 16px; border-bottom:1px solid var(--line); font-size:12.5px; transition:background .12s}
+.minilist button.mi:hover{background:var(--surface-2)}
+.minilist button.mi:last-child{border-bottom:none}
 .principle{display:flex; flex-direction:column; gap:8px; font-size:12px; color:var(--muted); line-height:1.6}
 .principle li{display:grid; grid-template-columns:12px minmax(0,1fr); gap:8px}
 .principle li::before{content:"✓"; color:var(--pri); font-size:10px}
@@ -253,10 +283,11 @@ td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:n
 @media (max-width:980px){.cols--list,.cols--detail,.cols--work{grid-template-columns:minmax(0,1fr)}}
 
 /* ============ 단계 레일 ============ */
-.rail{padding:8px}
+.rail{padding:8px; align-self:start}
 .rail__t{padding:8px 10px 10px}
 .stage{display:flex; gap:11px; width:100%; padding:9px 10px; border-radius:var(--r); text-align:left; transition:background .14s}
-.stage:hover{background:var(--surface-2)}
+.stage:hover:not(:disabled){background:var(--surface-2)}
+.stage:disabled{cursor:default}
 .stage[aria-current="true"]{background:var(--pri-wash)}
 .stage__gut{display:flex; flex-direction:column; align-items:center; width:18px; flex-shrink:0}
 .stage__b{
@@ -270,6 +301,7 @@ td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:n
 .stage--done .stage__l{background:var(--ok)}
 .stage--active .stage__b{border-color:var(--pri); border-width:4.5px}
 .stage--gate .stage__b{border-style:dashed; border-color:var(--draft-line)}
+.stage--fail .stage__b{background:var(--high); border-color:var(--high); color:#fff}
 .stage__n{font-size:12.5px; font-weight:500; line-height:1.45}
 .stage__c{display:block; font-family:var(--mono); font-size:9.5px; letter-spacing:.04em; color:var(--muted); margin-top:1px}
 .gate{
@@ -291,17 +323,21 @@ td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:n
 }
 .banner .bi{color:var(--pri); font-weight:700; flex-shrink:0}
 .banner b{color:var(--pri)}
+.banner--bad{border-color:color-mix(in srgb,var(--high) 34%,transparent); background:var(--high-wash)}
+.banner--bad .bi,.banner--bad b{color:var(--high)}
+.banner--ok{border-color:color-mix(in srgb,var(--ok) 34%,transparent); background:var(--ok-wash)}
+.banner--ok .bi,.banner--ok b{color:var(--ok)}
 
 .transcript{display:flex; flex-direction:column; gap:13px; font-size:13.5px}
 .turn{display:grid; grid-template-columns:76px minmax(0,1fr); gap:14px; align-items:start}
-.turn__w{font-size:11px; color:var(--muted); font-weight:500; padding-top:2px; text-align:right}
+.turn__w{font-size:11px; color:var(--muted); font-weight:500; padding-top:2px; text-align:right; overflow-wrap:anywhere}
 .turn--c .turn__w{color:var(--pri); font-weight:700}
-.turn__s{color:var(--ink-2)}
+.turn__s{color:var(--ink-2); overflow-wrap:anywhere}
 .turn--c .turn__s{color:var(--ink)}
-.turn__s mark{background:color-mix(in srgb,var(--med) 26%,transparent); color:inherit; padding:1px 3px; border-radius:3px}
+.turn--plain{grid-template-columns:minmax(0,1fr); white-space:pre-wrap}
 
 .fieldset{display:flex; flex-direction:column; gap:16px}
-.flabel{display:flex; align-items:center; gap:8px; margin-bottom:8px}
+.flabel{display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap}
 .flabel h3{font-size:12px; color:var(--ink-2); font-weight:700}
 .editable{border:1px solid transparent; border-radius:var(--r); padding:7px 9px; margin:-7px -9px; transition:background .14s, border-color .14s}
 .editable:hover{background:var(--surface); border-color:var(--line)}
@@ -315,19 +351,43 @@ td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:n
 .sgrid .k b{font-family:var(--sans); font-size:11.5px; letter-spacing:0; color:var(--ink-2); font-weight:700}
 .sgrid .v{font-size:12.5px; color:var(--ink)}
 .sgrid .v.empty{color:var(--muted)}
+.sgrid .v ul{display:flex; flex-direction:column; gap:4px}
+.sgrid .v li{display:grid; grid-template-columns:9px minmax(0,1fr); gap:6px; align-items:baseline}
+.sgrid .v li::before{content:"·"; color:var(--muted)}
+
+/* ============ 폼 ============ */
+.field{display:flex; flex-direction:column; gap:6px}
+.field > label{font-size:12px; font-weight:700; color:var(--ink-2)}
+.field .hint{font-size:11px; color:var(--muted)}
+.inp, .ta, .sel{
+  width:100%; font:inherit; color:var(--ink); background:var(--surface);
+  border:1px solid var(--line-2); border-radius:var(--r); padding:8px 11px; outline:none;
+  transition:border-color .14s, box-shadow .14s;
+}
+.ta{font-size:13.5px; line-height:1.65; resize:vertical; min-height:88px}
+.ta--code{font-family:var(--mono); font-size:12.5px}
+.inp:focus,.ta:focus,.sel:focus{border-color:var(--pri); box-shadow:0 0 0 3px var(--pri-wash)}
+.inp:disabled,.ta:disabled,.sel:disabled{background:var(--surface-2); color:var(--muted); cursor:not-allowed}
+.sel{appearance:none; padding-right:30px;
+  background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);
+  background-position:calc(100% - 15px) 52%, calc(100% - 10px) 52%;
+  background-size:5px 5px, 5px 5px; background-repeat:no-repeat}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px}
 
 /* ============ 분석 결과 ============ */
-.change{display:grid; grid-template-columns:24px 96px minmax(0,1fr); gap:12px; align-items:center; padding:12px 4px; border-bottom:1px solid var(--line)}
+.change{display:grid; grid-template-columns:24px 110px minmax(0,1fr); gap:12px; align-items:center; padding:12px 4px; border-bottom:1px solid var(--line)}
 .change:last-child{border-bottom:none}
 .change__a{font-size:17px; line-height:1; text-align:center; font-weight:700}
 .change--worse .change__a{color:var(--high)}
 .change--better .change__a{color:var(--ok)}
+.change--same .change__a{color:var(--low)}
 .change--unknown .change__a{color:var(--muted)}
 .change__c{font-size:12.5px; font-weight:700}
 .change__c small{display:block; font-family:var(--mono); font-size:9.5px; color:var(--muted); font-weight:400; letter-spacing:.05em}
 .change__m{display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:12.5px}
 .change__p{color:var(--muted); text-decoration:line-through; text-decoration-color:var(--line-2)}
 .change__t{color:var(--muted); font-size:11px}
+.change__d{display:block; font-size:11.5px; color:var(--muted); width:100%}
 
 .risk{display:grid; grid-template-columns:4px minmax(0,1fr); gap:15px; overflow:hidden; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:14px 16px 14px 0}
 .risk__s{background:var(--low)}
@@ -339,15 +399,20 @@ td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:n
 .risk__w{font-size:12px; color:var(--muted)}
 
 .actions{display:flex; flex-direction:column; gap:9px}
-.action{display:grid; grid-template-columns:20px minmax(0,1fr) auto; gap:12px; align-items:start; border:1px solid var(--line); border-radius:var(--r-lg); padding:13px 15px; background:var(--surface); cursor:pointer}
+.action{display:grid; grid-template-columns:20px minmax(0,1fr) auto; gap:12px; align-items:start; border:1px solid var(--line); border-radius:var(--r-lg); padding:13px 15px; background:var(--surface); text-align:left; width:100%; transition:border-color .14s, background .14s}
+.action:hover{border-color:var(--line-2)}
 .action__ck{width:17px; height:17px; border-radius:5px; border:1.5px solid var(--line-2); margin-top:2px; background:var(--surface); flex-shrink:0; display:grid; place-items:center; color:transparent; font-size:10px}
 .action.is-done{background:var(--surface-2)}
 .action.is-done .action__ck{background:var(--ok); border-color:var(--ok); color:#fff}
 .action.is-done .action__t{text-decoration:line-through; color:var(--muted)}
+.action.is-dismissed{opacity:.6}
+.action.is-dismissed .action__t{text-decoration:line-through; color:var(--muted)}
+.action.is-busy{opacity:.55; pointer-events:none}
 .action__t{font-size:13.5px; font-weight:700; margin-bottom:3px}
 .action__r{font-size:12px; color:var(--muted)}
 .action__side{display:flex; flex-direction:column; align-items:flex-end; gap:5px}
 .action__d{font-family:var(--mono); font-size:11px; color:var(--muted)}
+.actrow{display:flex; align-items:center; gap:8px}
 
 /* ============ 타임라인 / 리포트 ============ */
 .tl{display:grid; grid-template-columns:80px 16px minmax(0,1fr); gap:0 12px}
@@ -381,14 +446,59 @@ td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:n
 .typerow > div{display:grid; grid-template-columns:140px minmax(0,1fr); gap:16px; align-items:baseline}
 .typerow .lbl{font-family:var(--mono); font-size:10.5px; color:var(--muted); letter-spacing:.07em; line-height:1.5}
 .legend{display:flex; flex-wrap:wrap; gap:8px}
+.epgrid{display:grid; gap:0; font-size:12.5px}
+.epgrid > div{display:grid; grid-template-columns:150px minmax(0,1fr); gap:14px; padding:9px 0; border-bottom:1px solid var(--line); align-items:baseline}
+.epgrid > div:last-child{border-bottom:none}
+.epgrid .m{font-family:var(--mono); font-size:11px; color:var(--pri); overflow-wrap:anywhere}
+
+/* ============ 상태 · 빈 화면 ============ */
+.empty{display:flex; flex-direction:column; align-items:center; gap:9px; padding:40px 20px; text-align:center; color:var(--muted); font-size:13px}
+.empty b{color:var(--ink-2); font-size:14px}
+.empty .em{font-size:26px; line-height:1; color:var(--line-2)}
+.skel{background:linear-gradient(90deg,var(--surface-2) 25%,var(--line) 50%,var(--surface-2) 75%); background-size:400% 100%; animation:sk 1.3s ease infinite; border-radius:6px; height:13px}
+@keyframes sk{0%{background-position:100% 0}100%{background-position:0 0}}
+.skelstack{display:flex; flex-direction:column; gap:11px; padding:18px 16px}
+.spin{width:14px; height:14px; border-radius:50%; border:2px solid var(--line-2); border-top-color:var(--pri); animation:sp .7s linear infinite; display:inline-block; flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+.working{display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--muted); padding:34px 16px; justify-content:center}
+
+/* ============ 모달 ============ */
+.scrim{position:fixed; inset:0; background:var(--scrim); display:grid; place-items:center; padding:20px; z-index:60; overflow-y:auto}
+.modal{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-3); width:100%; max-width:460px; margin:auto}
+.modal__h{display:flex; align-items:center; gap:10px; padding:16px 18px; border-bottom:1px solid var(--line)}
+.modal__h h2{font-size:15px}
+.modal__b{padding:18px; display:flex; flex-direction:column; gap:14px}
+.modal__f{display:flex; gap:9px; justify-content:flex-end; padding:14px 18px; border-top:1px solid var(--line); background:var(--surface-2); border-radius:0 0 var(--r-lg) var(--r-lg); flex-wrap:wrap}
+
+/* ============ 토스트 ============ */
+.toasts{position:fixed; right:18px; bottom:18px; z-index:80; display:flex; flex-direction:column; gap:9px; max-width:min(400px,calc(100vw - 36px))}
+.toast{
+  display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:var(--r);
+  background:var(--surface); border:1px solid var(--line-2); box-shadow:var(--sh-2); font-size:12.5px; color:var(--ink-2);
+  animation:tin .2s ease;
+}
+@keyframes tin{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+.toast b{display:block; color:var(--ink); margin-bottom:2px; font-size:13px}
+.toast--err{border-color:color-mix(in srgb,var(--high) 42%,transparent); background:var(--high-wash)}
+.toast--err b{color:var(--high)}
+.toast--ok{border-color:color-mix(in srgb,var(--ok) 42%,transparent); background:var(--ok-wash)}
+.toast--ok b{color:var(--ok)}
+.toast .x{margin-left:auto; color:var(--muted); font-size:14px; line-height:1; padding:0 2px}
 
 /* 화면 전환 */
 .screen{display:none}
 .screen.is-active{display:block}
+
+@media print{
+  .nav,.topbar,.toasts,.noprint{display:none !important}
+  .app{display:block}
+  .content{padding:0; max-width:none}
+  .panel{box-shadow:none; break-inside:avoid}
+  body{background:#fff}
+}
 </style>
 </head>
 <body>
-
 <div class="app">
 
   <!-- ============ 좌측 내비 ============ -->
@@ -399,18 +509,21 @@ td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:n
     </div>
 
     <div class="nav__sec">상담 업무</div>
-    <button class="navlink" aria-current="page" data-screen="list"><span class="ic">◉</span>내담자<span class="cnt">5</span></button>
-    <button class="navlink" data-screen="detail"><span class="ic">▤</span>내담자 상세</button>
-    <button class="navlink" data-screen="work"><span class="ic">◐</span>상담 처리<span class="cnt">2</span></button>
-    <button class="navlink" data-screen="report"><span class="ic">▦</span>사례회의 리포트</button>
+    <button class="navlink" data-nav="list"><span class="ic">◉</span>내담자<span class="cnt" id="navClientCnt">–</span></button>
+    <button class="navlink" data-nav="detail" id="navDetail" disabled><span class="ic">▤</span>내담자 상세</button>
+    <button class="navlink" data-nav="work" id="navWork" disabled><span class="ic">◐</span>상담 처리</button>
+    <button class="navlink" data-nav="report" id="navReport" disabled><span class="ic">▦</span>사례회의 리포트</button>
 
     <div class="nav__sec">참고</div>
-    <button class="navlink" data-screen="tokens"><span class="ic">◈</span>디자인 토큰</button>
+    <button class="navlink" data-nav="tokens"><span class="ic">◈</span>디자인 토큰</button>
 
     <div class="nav__foot">
+      <div class="nav__api" id="apiState" title="API 연결 상태">
+        <span class="sd"></span><span id="apiStateText">연결 확인 중…</span>
+      </div>
       <div class="nav__me">
         <span class="av">사</span>
-        <span>사회복지사<small>○○노인복지관</small></span>
+        <span>사회복지사<small>로그인 없이 공용 데이터</small></span>
       </div>
     </div>
   </aside>
@@ -422,577 +535,47 @@ td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:n
       <div class="spacer"></div>
       <div class="search" style="width:250px">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.5"></circle>
+          <path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
         </svg>
-        <input type="search" placeholder="이름 또는 가명 검색" aria-label="내담자 검색">
+        <input type="search" id="searchInput" placeholder="이름 또는 가명 검색" aria-label="내담자 검색">
       </div>
       <button class="btn btn--ghost btn--sm" id="themeToggle" title="라이트 / 다크 전환">◐ 테마</button>
-      <button class="btn btn--primary btn--sm">+ 내담자 등록</button>
+      <button class="btn btn--primary btn--sm" id="btnNewClient">+ 내담자 등록</button>
     </header>
 
     <div class="content">
+      <section class="screen is-active" id="screen-list"></section>
+      <section class="screen" id="screen-detail"></section>
+      <section class="screen" id="screen-work"></section>
+      <section class="screen" id="screen-report"></section>
 
-      <!-- ==================== 1. 내담자 목록 ==================== -->
-      <section class="screen is-active" id="screen-list">
-        <div class="pagehead">
-          <h1>오늘 <em>3건</em>의 후속조치가 기다립니다</h1>
-          <span class="note">로그인 없이 기관 공용 데이터로 운영 · 표시되는 이름은 모두 가명</span>
-        </div>
-
-        <div class="cols cols--list">
-          <div class="panel">
-            <div class="panel__head">
-              <h2>관리 중인 내담자</h2>
-              <span class="chip chip--code">GET /clients</span>
-              <div class="spacer"></div>
-              <button class="btn btn--sm">전체</button>
-              <button class="btn btn--sm">위험신호 있음</button>
-            </div>
-            <div class="panel__body panel__body--flush">
-              <div class="tablewrap">
-                <table>
-                  <thead>
-                    <tr><th>내담자</th><th>마지막 상담</th><th>미완료 Action</th><th>위험신호</th><th>메모</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr class="is-current">
-                      <td><div class="who"><span class="ini">김</span><div><div class="nm">김OO</div><div class="meta">1945년생 · 81세 · 여성</div></div></div></td>
-                      <td class="num">2026-09-04</td>
-                      <td class="num">3</td>
-                      <td><span class="chip chip--high"><span class="dot"></span>HIGH 1건</span></td>
-                      <td class="dim">독거 / 딸 부산 거주</td>
-                    </tr>
-                    <tr>
-                      <td><div class="who"><span class="ini">박</span><div><div class="nm">박OO</div><div class="meta">1938년생 · 88세 · 남성</div></div></div></td>
-                      <td class="num">2026-08-28</td>
-                      <td class="num">2</td>
-                      <td><span class="chip chip--med"><span class="dot"></span>MEDIUM 2건</span></td>
-                      <td class="dim">독거 / 보행 보조기 사용</td>
-                    </tr>
-                    <tr>
-                      <td><div class="who"><span class="ini">이</span><div><div class="nm">이OO</div><div class="meta">1941년생 · 85세 · 여성</div></div></div></td>
-                      <td class="num">2026-08-22</td>
-                      <td class="num">0</td>
-                      <td class="dim">—</td>
-                      <td class="dim">며느리와 동거</td>
-                    </tr>
-                    <tr>
-                      <td><div class="who"><span class="ini">정</span><div><div class="nm">정OO</div><div class="meta">1950년생 · 76세 · 여성</div></div></div></td>
-                      <td class="num">2026-08-19</td>
-                      <td class="num">1</td>
-                      <td><span class="chip chip--low"><span class="dot"></span>LOW 1건</span></td>
-                      <td class="dim">경로당 정기 이용</td>
-                    </tr>
-                    <tr>
-                      <td><div class="who"><span class="ini">최</span><div><div class="nm">최OO</div><div class="meta">1944년생 · 82세 · 남성</div></div></div></td>
-                      <td class="num dim">상담 없음</td>
-                      <td class="num">0</td>
-                      <td class="dim">—</td>
-                      <td class="dim">신규 등록</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <aside class="stack">
-            <div class="panel">
-              <div class="panel__head"><h2>처리 중인 상담</h2><div class="spacer"></div><span class="chip chip--code">2</span></div>
-              <ul class="minilist">
-                <li><span class="when">09-04</span><span>김OO<br><span class="chip chip--draft" style="margin-top:5px">상담일지 검토 대기</span></span></li>
-                <li><span class="when">09-04</span><span>박OO<br><span class="chip chip--code" style="margin-top:5px">TRANSCRIBING</span></span></li>
-              </ul>
-            </div>
-
-            <div class="panel">
-              <div class="panel__head"><h2>오늘 처리할 일</h2></div>
-              <ul class="minilist">
-                <li><span class="when">오늘</span><span>김OO · 병원 동행 지원 가능 여부 확인</span></li>
-                <li><span class="when">오늘</span><span>박OO · 식사 배달 신청 결과 확인</span></li>
-                <li><span class="when">D-2</span><span>김OO · 식생활 상태 재확인</span></li>
-                <li><span class="when">D-5</span><span>정OO · 안부전화</span></li>
-              </ul>
-            </div>
-
-            <div class="panel">
-              <div class="panel__head"><h2>기록 원칙</h2></div>
-              <div class="panel__body">
-                <ul class="principle">
-                  <li>상담에서 확인되지 않은 사실은 만들지 않습니다.</li>
-                  <li>불명확한 정보는 <span class="mono">확인 필요</span> · <span class="mono">UNKNOWN</span>으로 표시합니다.</li>
-                  <li>의료·법률적 진단은 하지 않습니다.</li>
-                  <li>확정하기 전까지 모든 값은 초안입니다.</li>
-                </ul>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <!-- ==================== 2. 내담자 상세 ==================== -->
-      <section class="screen" id="screen-detail">
-        <div class="pagehead">
-          <h1>김OO</h1>
-          <span class="chip chip--code">GET /clients/1</span>
-          <span class="note">상태 요약 출처 · 2026-09-04 확정 상담</span>
-        </div>
-
-        <div class="cols cols--detail">
-          <aside class="stack">
-            <div class="panel">
-              <div class="panel__body stack">
-                <div class="row" style="gap:13px">
-                  <span class="ini" style="width:48px;height:48px;border-radius:14px;font-size:20px">김</span>
-                  <div>
-                    <div style="font-size:17px;font-weight:700">김OO</div>
-                    <div class="dim" style="font-size:12.5px">1945년생 · 81세 · 여성</div>
-                  </div>
-                </div>
-                <hr class="hr">
-                <div>
-                  <div class="eyebrow" style="margin-bottom:5px">메모</div>
-                  <div style="font-size:13px">독거 / 딸 부산 거주</div>
-                </div>
-                <button class="btn btn--primary btn--block">녹음 파일 업로드</button>
-                <button class="btn btn--block">사례회의 리포트 생성</button>
-              </div>
-            </div>
-
-            <div class="panel">
-              <div class="panel__head"><h2>미완료 Action</h2><div class="spacer"></div><span class="chip chip--code">3</span></div>
-              <div class="panel__body actions">
-                <div class="action">
-                  <span class="action__ck">✓</span>
-                  <div><div class="action__t">병원 동행 지원 가능 여부 확인</div><div class="action__r">RESOURCE_REFERRAL</div></div>
-                  <div class="action__side"><span class="chip chip--high">높음</span><span class="action__d">09-07</span></div>
-                </div>
-                <div class="action">
-                  <span class="action__ck">✓</span>
-                  <div><div class="action__t">식생활 상태 재확인</div><div class="action__r">CHECK_NUTRITION</div></div>
-                  <div class="action__side"><span class="chip chip--high">높음</span><span class="action__d">09-07</span></div>
-                </div>
-                <div class="action">
-                  <span class="action__ck">✓</span>
-                  <div><div class="action__t">병원 방문 이후 상태 확인</div><div class="action__r">FOLLOW_UP_CALL</div></div>
-                  <div class="action__side"><span class="chip chip--med">보통</span><span class="action__d">09-14</span></div>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          <div class="stack">
-            <div class="panel">
-              <div class="panel__head">
-                <h2>현재 상태</h2>
-                <span class="chip chip--ok"><span class="dot"></span>확정 기록 기준</span>
-                <div class="spacer"></div>
-                <span class="dim" style="font-size:11.5px">2026-09-04 상담</span>
-              </div>
-              <div class="panel__body">
-                <div class="sgrid">
-                  <div><div class="k"><b>건강</b>HEALTH</div><div class="v">무릎 통증 악화</div></div>
-                  <div><div class="k"><b>식생활</b>NUTRITION</div><div class="v">하루 한 끼 수준으로 식사 감소</div></div>
-                  <div><div class="k"><b>사회관계</b>SOCIAL</div><div class="v">외출 감소</div></div>
-                  <div><div class="k"><b>가족</b>FAMILY</div><div class="v">자녀 타지역 거주</div></div>
-                  <div><div class="k"><b>정서</b>EMOTION</div><div class="v empty">확인된 내용 없음</div></div>
-                  <div><div class="k"><b>주거</b>HOUSING</div><div class="v empty">확인된 내용 없음</div></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel">
-              <div class="panel__head"><h2>상담 이력</h2><div class="spacer"></div><span class="chip chip--code">3건</span></div>
-              <div class="panel__body panel__body--flush">
-                <div class="tablewrap">
-                  <table>
-                    <thead><tr><th>상담일</th><th>요약</th><th>상태</th><th>확정 시각</th></tr></thead>
-                    <tbody>
-                      <tr><td class="num">2026-09-04</td><td>무릎 통증 악화로 외출·식사 준비에 어려움을 호소함</td><td><span class="chip chip--ok"><span class="dot"></span>DONE</span></td><td class="num dim">10:45</td></tr>
-                      <tr><td class="num">2026-08-21</td><td>외출 빈도가 줄었다고 이야기함</td><td><span class="chip chip--ok"><span class="dot"></span>DONE</span></td><td class="num dim">14:12</td></tr>
-                      <tr><td class="num">2026-08-03</td><td>무릎 통증이 처음 확인됨</td><td><span class="chip chip--ok"><span class="dot"></span>DONE</span></td><td class="num dim">11:02</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== 3. 상담 처리 ==================== -->
-      <section class="screen" id="screen-work">
-        <div class="pagehead">
-          <h1>상담 처리</h1>
-          <span class="chip chip--code">consultation #101 · 김OO</span>
-          <span class="note">왼쪽 단계를 눌러 화면을 확인하세요</span>
-        </div>
-
-        <div class="cols cols--work">
-          <aside class="panel rail">
-            <div class="rail__t"><div class="eyebrow">처리 단계</div></div>
-
-            <button class="stage stage--done" data-step="transcript">
-              <span class="stage__gut"><span class="stage__b">✓</span><span class="stage__l"></span></span>
-              <span><span class="stage__n">녹음 파일 업로드</span><span class="stage__c">UPLOADED</span></span>
-            </button>
-            <button class="stage stage--done" data-step="transcript">
-              <span class="stage__gut"><span class="stage__b">✓</span><span class="stage__l"></span></span>
-              <span><span class="stage__n">음성 → 텍스트 변환</span><span class="stage__c">TRANSCRIBING</span></span>
-            </button>
-            <button class="stage stage--gate" data-step="transcript" aria-current="true">
-              <span class="stage__gut"><span class="stage__b"></span><span class="stage__l"></span></span>
-              <span><span class="stage__n">전사문 검토</span><span class="stage__c">AWAITING_TRANSCRIPT_REVIEW</span></span>
-            </button>
-            <div class="gate">상담자 확정 필요</div>
-
-            <button class="stage" data-step="note">
-              <span class="stage__gut"><span class="stage__b"></span><span class="stage__l"></span></span>
-              <span><span class="stage__n">상담일지 초안 생성</span><span class="stage__c">GENERATING_NOTE</span></span>
-            </button>
-            <button class="stage stage--gate" data-step="note">
-              <span class="stage__gut"><span class="stage__b"></span><span class="stage__l"></span></span>
-              <span><span class="stage__n">상담일지 검토</span><span class="stage__c">AWAITING_NOTE_REVIEW</span></span>
-            </button>
-            <div class="gate">상담자 확정 필요</div>
-
-            <button class="stage" data-step="analysis">
-              <span class="stage__gut"><span class="stage__b"></span><span class="stage__l"></span></span>
-              <span><span class="stage__n">후속 분석</span><span class="stage__c">ANALYZING</span></span>
-            </button>
-            <button class="stage" data-step="analysis">
-              <span class="stage__gut"><span class="stage__b"></span></span>
-              <span><span class="stage__n">기록 완료</span><span class="stage__c">DONE</span></span>
-            </button>
-          </aside>
-
-          <div>
-            <!-- (a) 전사문 검토 -->
-            <div class="panel step" data-panel="transcript">
-              <div class="worktop">
-                <h2>전사문 검토</h2>
-                <span class="chip chip--draft">STT 초안</span>
-                <div class="spacer"></div>
-                <button class="btn btn--sm">수정 내용 저장</button>
-                <button class="btn btn--primary btn--sm">전사문 확정 · 상담일지 생성</button>
-              </div>
-              <div class="panel__body stack">
-                <div class="banner">
-                  <span class="bi">i</span>
-                  <span><b>확정하면 전사문은 수정할 수 없습니다.</b> 확정 시점에는 상담일지 초안 생성만 시작하며, 위험신호와 추천 Action은 아직 만들지 않습니다.</span>
-                </div>
-
-                <div class="doc doc--draft">
-                  <div class="doc__bar">
-                    <span class="eyebrow">2026-09-04 10:12 상담 · 8분 24초</span>
-                    <div class="spacer"></div>
-                    <span class="dim" style="font-size:11.5px">원본 음성은 전사 후 삭제됩니다</span>
-                  </div>
-                  <div class="transcript">
-                    <div class="turn"><span class="turn__w">사회복지사</span><span class="turn__s">요즘 식사는 잘하고 계세요?</span></div>
-                    <div class="turn turn--c"><span class="turn__w">김OO</span><span class="turn__s">요새 <mark>무릎이 아파서</mark> 뭘 해먹기가 힘들어요. <mark>라면 먹을 때가 많아요.</mark></span></div>
-                    <div class="turn"><span class="turn__w">사회복지사</span><span class="turn__s">병원은 가보셨어요?</span></div>
-                    <div class="turn turn--c"><span class="turn__w">김OO</span><span class="turn__s"><mark>다음 주에 가야 하는데 혼자 가기가 힘들어요.</mark></span></div>
-                    <div class="turn"><span class="turn__w">사회복지사</span><span class="turn__s">따님은 자주 오시나요?</span></div>
-                    <div class="turn turn--c"><span class="turn__w">김OO</span><span class="turn__s">부산에 있어서 명절에나 와요.</span></div>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <span class="chip chip--code">PATCH /consultations/101/transcript</span>
-                  <span class="chip chip--code">POST /consultations/101/transcript/confirm</span>
-                  <span class="dim" style="font-size:11.5px">저장은 상태를 바꾸지 않습니다</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- (b) 상담일지 검토 -->
-            <div class="panel step" data-panel="note" hidden>
-              <div class="worktop">
-                <h2>상담일지 검토</h2>
-                <span class="chip chip--draft">AI 초안 · 수정 가능</span>
-                <div class="spacer"></div>
-                <button class="btn btn--sm">저장</button>
-                <button class="btn btn--primary btn--sm">상담일지 확정 · 분석 시작</button>
-              </div>
-              <div class="panel__body stack">
-                <div class="banner">
-                  <span class="bi">i</span>
-                  <span>여기서 <b>고친 내용이 그대로</b> 위험신호와 추천 Action의 근거가 됩니다. 지운 내용은 다시 살아나지 않습니다.</span>
-                </div>
-
-                <div class="doc doc--draft fieldset">
-                  <div>
-                    <div class="flabel"><h3>상담 요약</h3><span class="chip chip--draft">초안</span></div>
-                    <div class="editable" style="font-size:14px">대상자는 최근 무릎 통증이 심해져 외출 및 식사 준비에 어려움을 겪고 있다고 이야기함.</div>
-                  </div>
-                  <hr class="hr">
-                  <div>
-                    <div class="flabel"><h3>주요 상담 내용</h3><span class="chip chip--draft">초안 · 5항목</span></div>
-                    <ul class="bullets editable">
-                      <li>최근 무릎 통증 악화</li>
-                      <li>외출 빈도 감소</li>
-                      <li>식사 준비가 어려워 라면 등으로 대체</li>
-                      <li>다음 진료 방문 예정</li>
-                      <li>혼자 병원에 가는 데 어려움 호소</li>
-                    </ul>
-                  </div>
-                  <hr class="hr">
-                  <div>
-                    <div class="flabel"><h3>내담자 상태</h3><span class="chip chip--draft">초안 · 6개 항목 고정</span></div>
-                    <div class="sgrid">
-                      <div><div class="k"><b>건강</b>HEALTH</div><div class="v">무릎 통증 악화</div></div>
-                      <div><div class="k"><b>식생활</b>NUTRITION</div><div class="v">식사 준비 어려움</div></div>
-                      <div><div class="k"><b>사회관계</b>SOCIAL</div><div class="v">외출 감소</div></div>
-                      <div><div class="k"><b>가족</b>FAMILY</div><div class="v">자녀 타지역 거주</div></div>
-                      <div><div class="k"><b>정서</b>EMOTION</div><div class="v empty">확인된 내용 없음</div></div>
-                      <div><div class="k"><b>주거</b>HOUSING</div><div class="v empty">확인된 내용 없음</div></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <span class="chip chip--code">PATCH /consultations/101/counseling-note</span>
-                  <span class="chip chip--code">POST /consultations/101/counseling-note/confirm</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- (c) 분석 결과 -->
-            <div class="panel step" data-panel="analysis" hidden>
-              <div class="worktop">
-                <h2>후속 분석 결과</h2>
-                <span class="chip chip--ok"><span class="dot"></span>확정 기록</span>
-                <div class="spacer"></div>
-                <span class="dim mono" style="font-size:11.5px">비교 상담 #99, #97</span>
-              </div>
-              <div class="panel__body stack">
-
-                <div>
-                  <div class="eyebrow" style="margin-bottom:10px">이번 상담에서 확인된 변화</div>
-                  <div>
-                    <div class="change change--worse">
-                      <span class="change__a">↓</span>
-                      <span class="change__c">건강<small>HEALTH · WORSENED</small></span>
-                      <span class="change__m"><span class="change__p">경미한 무릎 통증</span><span class="change__t">→</span><b>무릎 통증 악화</b></span>
-                    </div>
-                    <div class="change change--worse">
-                      <span class="change__a">↓</span>
-                      <span class="change__c">식생활<small>NUTRITION · WORSENED</small></span>
-                      <span class="change__m"><span class="change__p">식사 정상</span><span class="change__t">→</span><b>하루 한 끼 수준으로 식사 감소</b></span>
-                    </div>
-                    <div class="change change--worse">
-                      <span class="change__a">↓</span>
-                      <span class="change__c">사회관계<small>SOCIAL · WORSENED</small></span>
-                      <span class="change__m"><span class="change__p">외출 유지</span><span class="change__t">→</span><b>외출 감소</b></span>
-                    </div>
-                    <div class="change change--unknown">
-                      <span class="change__a">?</span>
-                      <span class="change__c">정서<small>EMOTION · UNKNOWN</small></span>
-                      <span class="change__m"><span class="dim">이번 상담에서 판단할 근거가 없어 확인이 필요합니다</span></span>
-                    </div>
-                  </div>
-                </div>
-
-                <hr class="hr">
-
-                <div>
-                  <div class="eyebrow" style="margin-bottom:10px">위험신호 · 2건</div>
-                  <div class="stack" style="gap:10px">
-                    <div class="risk risk--med">
-                      <span class="risk__s"></span>
-                      <div>
-                        <div class="risk__h"><h4>식생활 상태 추가 확인 필요</h4><span class="chip chip--med">MEDIUM</span><span class="chip chip--code">NUTRITION</span></div>
-                        <blockquote class="quote">“라면 먹을 때가 많아요.”</blockquote>
-                        <p class="risk__w">최근 정상적인 식사를 준비하기 어려운 것으로 보이며 추가적인 확인이 필요합니다.</p>
-                      </div>
-                    </div>
-                    <div class="risk risk--med">
-                      <span class="risk__s"></span>
-                      <div>
-                        <div class="risk__h"><h4>건강 상태 악화 여부 확인 필요</h4><span class="chip chip--med">MEDIUM</span><span class="chip chip--code">HEALTH</span></div>
-                        <blockquote class="quote">“요새 무릎이 아파서 뭘 해먹기가 힘들어요.”</blockquote>
-                        <p class="risk__w">통증이 이전 상담보다 심해진 것으로 보이며 진료 결과 확인이 필요합니다.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <hr class="hr">
-
-                <div>
-                  <div class="eyebrow" style="margin-bottom:10px">미해결 이슈 · 3건</div>
-                  <ul class="bullets">
-                    <li>병원 이동 방법 미정</li>
-                    <li>식사지원 서비스 이용 여부 미정</li>
-                    <li>다음 진료 결과 확인 필요</li>
-                  </ul>
-                </div>
-
-                <hr class="hr">
-
-                <div>
-                  <div class="eyebrow" style="margin-bottom:10px">추천 Action · 3건</div>
-                  <div class="actions">
-                    <div class="action">
-                      <span class="action__ck">✓</span>
-                      <div><div class="action__t">병원 동행 지원 가능 여부 확인</div><div class="action__r">다음 주 진료 예정이나 혼자 이동하기 어렵다고 이야기함</div></div>
-                      <div class="action__side"><span class="chip chip--high">높음</span><span class="action__d">기한 09-07</span><span class="chip chip--code">RESOURCE_REFERRAL</span></div>
-                    </div>
-                    <div class="action">
-                      <span class="action__ck">✓</span>
-                      <div><div class="action__t">식생활 상태 재확인</div><div class="action__r">식사 준비의 어려움을 호소함</div></div>
-                      <div class="action__side"><span class="chip chip--high">높음</span><span class="action__d">기한 09-07</span><span class="chip chip--code">CHECK_NUTRITION</span></div>
-                    </div>
-                    <div class="action is-done">
-                      <span class="action__ck">✓</span>
-                      <div><div class="action__t">병원 방문 이후 상태 확인</div><div class="action__r">진료 결과에 따라 지원 계획을 조정할 필요가 있음</div></div>
-                      <div class="action__side"><span class="chip chip--ok">완료</span><span class="action__d">기한 09-14</span><span class="chip chip--code">FOLLOW_UP_CALL</span></div>
-                    </div>
-                  </div>
-                  <p class="dim" style="font-size:11.5px;margin-top:9px">추천일 뿐이며 최종 판단은 상담자가 합니다. 카드를 눌러 완료 처리할 수 있습니다.</p>
-                </div>
-
-              </div>
-            </div>
-          </div>
-
-          <aside class="stack">
-            <div class="panel">
-              <div class="panel__head"><h2>이 내담자</h2></div>
-              <div class="panel__body stack" style="gap:12px">
-                <div>
-                  <div style="font-size:15px;font-weight:700">김OO</div>
-                  <div class="dim" style="font-size:12px">1945년생 · 81세 · 여성</div>
-                </div>
-                <div class="dim" style="font-size:12.5px">독거 / 딸 부산 거주</div>
-                <hr class="hr">
-                <div class="row" style="gap:22px">
-                  <div><div class="eyebrow">미완료 ACTION</div><div class="mono" style="font-size:20px;font-weight:700">3</div></div>
-                  <div><div class="eyebrow">누적 상담</div><div class="mono" style="font-size:20px;font-weight:700">3</div></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel">
-              <div class="panel__head"><h2>지난 상담</h2></div>
-              <ul class="minilist">
-                <li><span class="when">08-21</span><span>외출 빈도 감소</span></li>
-                <li><span class="when">08-03</span><span>무릎 통증 최초 확인</span></li>
-              </ul>
-            </div>
-
-            <div class="panel">
-              <div class="panel__head"><h2>상태 배지</h2></div>
-              <div class="panel__body">
-                <div class="legend">
-                  <span class="chip chip--code">UPLOADED</span>
-                  <span class="chip chip--code">TRANSCRIBING</span>
-                  <span class="chip chip--draft">검토 대기</span>
-                  <span class="chip chip--code">GENERATING_NOTE</span>
-                  <span class="chip chip--code">ANALYZING</span>
-                  <span class="chip chip--ok"><span class="dot"></span>DONE</span>
-                  <span class="chip chip--high"><span class="dot"></span>FAILED</span>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <!-- ==================== 4. 사례회의 리포트 ==================== -->
-      <section class="screen" id="screen-report">
-        <div class="pagehead">
-          <h1>사례회의 리포트</h1>
-          <span class="chip chip--code">POST /clients/1/case-report</span>
-          <span class="note">확정 상담 3건 종합 · 2026-09-04 11:20 생성</span>
-        </div>
-
-        <div class="cols cols--detail">
-          <aside class="stack">
-            <div class="panel">
-              <div class="panel__head"><h2>주요 변화 Timeline</h2></div>
-              <div class="panel__body">
-                <div class="tl">
-                  <span class="tl__d">08-03</span>
-                  <span class="tl__g"><span class="tl__o"></span><span class="tl__l"></span></span>
-                  <div class="tl__b"><h4>무릎 통증 최초 확인</h4><p>외출과 식사는 유지되던 시점</p></div>
-                </div>
-                <div class="tl">
-                  <span class="tl__d">08-21</span>
-                  <span class="tl__g"><span class="tl__o"></span><span class="tl__l"></span></span>
-                  <div class="tl__b"><h4>외출 감소</h4><p>통증으로 바깥 활동이 줄기 시작</p></div>
-                </div>
-                <div class="tl">
-                  <span class="tl__d">09-04</span>
-                  <span class="tl__g"><span class="tl__o"></span><span class="tl__l"></span></span>
-                  <div class="tl__b"><h4>식사 어려움 확인</h4><p>하루 한 끼 수준 · 병원 동행 필요</p></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel">
-              <div class="panel__head"><h2>내보내기</h2></div>
-              <div class="panel__body stack" style="gap:8px">
-                <button class="btn btn--block">회의 자료로 복사</button>
-                <button class="btn btn--block">인쇄용 보기</button>
-              </div>
-            </div>
-          </aside>
-
-          <div class="stack">
-            <div class="panel">
-              <div class="panel__body stack">
-                <div class="overview">
-                  김OO / 1945년생 / 독거
-                  <small>딸 부산 거주 · 정기 전화 상담 진행 중 (확정 상담 3건)</small>
-                </div>
-                <hr class="hr">
-                <div>
-                  <div class="eyebrow" style="margin-bottom:10px">최근 상태</div>
-                  <div class="sgrid">
-                    <div><div class="k"><b>건강</b>HEALTH</div><div class="v">무릎 통증이 최근 지속적으로 악화</div></div>
-                    <div><div class="k"><b>식생활</b>NUTRITION</div><div class="v">정상적인 식사 횟수 감소</div></div>
-                    <div><div class="k"><b>사회관계</b>SOCIAL</div><div class="v">외출 빈도 감소</div></div>
-                    <div><div class="k"><b>가족</b>FAMILY</div><div class="v">자녀 타지역 거주</div></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel">
-              <div class="panel__body report">
-                <div>
-                  <h3>현재 위험신호</h3>
-                  <ul><li>식생활 상태 추가 확인 필요</li><li>건강 상태 악화 여부 확인 필요</li></ul>
-                </div>
-                <div>
-                  <h3>미해결 이슈</h3>
-                  <ul><li>병원 이동 방법 미정</li><li>식사지원 서비스 이용 여부 미정</li><li>다음 진료 결과 확인 필요</li></ul>
-                </div>
-                <div>
-                  <h3>지원 현황</h3>
-                  <ul><li>정기 전화 상담 진행 중 (3건)</li></ul>
-                </div>
-                <div>
-                  <h3>회의에서 논의할 내용</h3>
-                  <ol><li>병원 동행 서비스 연계 여부</li><li>식사 지원 서비스 검토</li><li>상담 및 방문 빈도 조정 여부</li></ol>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== 5. 디자인 토큰 ==================== -->
+      <!-- ==================== 디자인 토큰 (정적) ==================== -->
       <section class="screen" id="screen-tokens">
         <div class="pagehead">
           <h1>디자인 토큰</h1>
-          <span class="note">프론트 레포에 그대로 옮길 수 있는 최소 세트 · weenote.kr 톤 기준</span>
+          <span class="note">프론트 레포에 그대로 옮길 수 있는 최소 세트</span>
         </div>
 
         <div class="stack">
+          <div class="panel">
+            <div class="panel__head"><h2>연결된 API</h2><div class="spacer"></div><span class="chip chip--code" id="tokBase">–</span></div>
+            <div class="panel__body">
+              <div class="epgrid">
+                <div><span>내담자 등록 · 목록</span><span class="m">POST /clients · GET /clients?search=&amp;limit=&amp;offset=</span></div>
+                <div><span>내담자 상세</span><span class="m">GET /clients/{client_id}</span></div>
+                <div><span>녹음 업로드</span><span class="m">POST /clients/{client_id}/consultations · multipart(audio, consulted_at)</span></div>
+                <div><span>상담 이력 · 상세</span><span class="m">GET /clients/{client_id}/consultations · GET /consultations/{id}</span></div>
+                <div><span>전사문</span><span class="m">PATCH /consultations/{id}/transcript · POST .../transcript/confirm</span></div>
+                <div><span>상담일지</span><span class="m">GET · PATCH /consultations/{id}/counseling-note · POST .../confirm</span></div>
+                <div><span>후속 분석</span><span class="m">GET /consultations/{id}/analysis</span></div>
+                <div><span>Action</span><span class="m">GET /clients/{client_id}/actions · PATCH /actions/{action_id}</span></div>
+                <div><span>사례회의 리포트</span><span class="m">POST /clients/{client_id}/case-report</span></div>
+                <div><span>헬스체크</span><span class="m">GET /health/live · GET /health/ready</span></div>
+              </div>
+            </div>
+          </div>
+
           <div class="panel">
             <div class="panel__head"><h2>색</h2><div class="spacer"></div><span class="dim" style="font-size:11.5px">라이트 기준 · 다크는 토큰 값만 교체</span></div>
             <div class="panel__body">
@@ -1038,7 +621,7 @@ td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:n
                   <div style="font-size:13px">점선 테두리 · 옅은 파랑 바탕 · 수정 가능<br><span class="dim">확정 전에는 어떤 값도 기록으로 취급하지 않습니다.</span></div>
                 </div>
                 <div class="doc" style="flex:1;min-width:260px">
-                  <div class="doc__bar"><span class="chip chip--ok"><span class="dot"></span>확정 · 09-04 10:45</span></div>
+                  <div class="doc__bar"><span class="chip chip--ok"><span class="dot"></span>확정 · 시각 표기</span></div>
                   <div style="font-size:13px">실선 테두리 · 수정 잠금 · 확정 시각 표기<br><span class="dim">확정된 내용만 위험신호·Action·리포트의 근거가 됩니다.</span></div>
                 </div>
               </div>
@@ -1064,39 +647,1472 @@ td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:n
   </div>
 </div>
 
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="modalRoot"></div>
+
 <script>
 (function(){
-  var links = document.querySelectorAll('.navlink');
-  var screens = document.querySelectorAll('.screen');
-  var crumb = document.getElementById('crumb');
-  links.forEach(function(link){
-    link.addEventListener('click', function(){
-      links.forEach(function(l){ l.removeAttribute('aria-current'); });
-      link.setAttribute('aria-current','page');
-      crumb.textContent = link.textContent.replace(/[0-9]+$/,'').replace(/[◉▤◐▦◈]/g,'').trim();
-      screens.forEach(function(s){ s.classList.toggle('is-active', s.id === 'screen-' + link.dataset.screen); });
-      window.scrollTo(0,0);
+"use strict";
+
+/* ============================================================
+   0. 설정
+   ============================================================ */
+var API_BASE = "https://asm-codex-impact-production.up.railway.app";
+var KST = "Asia/Seoul";
+var PAGE = 20;
+
+/* ============================================================
+   1. 도메인 사전 (docs/API_SPEC.md 기준)
+   ============================================================ */
+var CATS = [
+  {key:"health",    code:"HEALTH",    label:"건강"},
+  {key:"nutrition", code:"NUTRITION", label:"식생활"},
+  {key:"social",    code:"SOCIAL",    label:"사회관계"},
+  {key:"family",    code:"FAMILY",    label:"가족"},
+  {key:"emotion",   code:"EMOTION",   label:"정서"},
+  {key:"housing",   code:"HOUSING",   label:"주거"}
+];
+var CAT_BY_CODE = {}; CATS.forEach(function(c){ CAT_BY_CODE[c.code]=c; CAT_BY_CODE[c.key]=c; });
+
+var FLOW = [
+  {code:"UPLOADED",                   name:"녹음 파일 업로드",   step:"transcript"},
+  {code:"TRANSCRIBING",               name:"음성 → 텍스트 변환", step:"transcript"},
+  {code:"AWAITING_TRANSCRIPT_REVIEW", name:"전사문 검토",       step:"transcript", gate:true},
+  {code:"GENERATING_NOTE",            name:"상담일지 초안 생성", step:"note"},
+  {code:"AWAITING_NOTE_REVIEW",       name:"상담일지 검토",     step:"note", gate:true},
+  {code:"ANALYZING",                  name:"후속 분석",         step:"analysis"},
+  {code:"DONE",                       name:"기록 완료",         step:"analysis"}
+];
+var FLOW_INDEX = {}; FLOW.forEach(function(s,i){ FLOW_INDEX[s.code]=i; });
+
+var STATUS_LABEL = {
+  UPLOADED:"업로드됨", TRANSCRIBING:"음성 변환 중",
+  AWAITING_TRANSCRIPT_REVIEW:"전사문 검토 대기",
+  GENERATING_NOTE:"상담일지 생성 중",
+  AWAITING_NOTE_REVIEW:"상담일지 검토 대기",
+  ANALYZING:"후속 분석 중", DONE:"완료", FAILED:"실패"
+};
+var BUSY = {UPLOADED:1, TRANSCRIBING:1, GENERATING_NOTE:1, ANALYZING:1};
+var GATE = {AWAITING_TRANSCRIPT_REVIEW:1, AWAITING_NOTE_REVIEW:1};
+
+var ACTION_TYPE = {
+  FOLLOW_UP_CALL:"안부전화", HOME_VISIT:"가정방문", CONTACT_FAMILY:"가족 연락",
+  CONTACT_SUPPORT_WORKER:"담당자 연락", RESOURCE_REFERRAL:"자원 연계",
+  CASE_REVIEW:"사례회의", CHECK_HEALTH:"건강 확인", CHECK_NUTRITION:"식생활 확인", OTHER:"기타"
+};
+var RISK_TYPE = {
+  HEALTH:"건강", NUTRITION:"식생활", EMOTION:"정서", ISOLATION:"고립", ABUSE:"학대",
+  HOUSING:"주거", ECONOMIC:"경제", SAFETY:"안전", OTHER:"기타"
+};
+var PRIORITY = {HIGH:"높음", MEDIUM:"보통", LOW:"낮음"};
+var PRIORITY_CHIP = {HIGH:"chip--high", MEDIUM:"chip--med", LOW:"chip--low"};
+var GENDER = {F:"여성", M:"남성", OTHER:"기타", UNKNOWN:"미상"};
+var CHANGE_META = {
+  IMPROVED:{arrow:"↑", cls:"change--better", label:"개선"},
+  WORSENED:{arrow:"↓", cls:"change--worse",  label:"악화"},
+  UNCHANGED:{arrow:"=", cls:"change--same",  label:"유지"},
+  UNKNOWN:{arrow:"?", cls:"change--unknown", label:"확인 필요"}
+};
+
+/* ============================================================
+   2. 유틸
+   ============================================================ */
+function $(sel, root){ return (root||document).querySelector(sel); }
+function esc(v){
+  if(v===null||v===undefined) return "";
+  return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+                  .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function fmtDate(iso){
+  if(!iso) return null;
+  var d = new Date(iso); if(isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("en-CA",{timeZone:KST,year:"numeric",month:"2-digit",day:"2-digit"}).format(d);
+}
+function fmtTime(iso){
+  if(!iso) return null;
+  var d = new Date(iso); if(isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("en-GB",{timeZone:KST,hour:"2-digit",minute:"2-digit",hour12:false}).format(d);
+}
+function fmtDT(iso){ var a=fmtDate(iso), b=fmtTime(iso); return a? (a+" "+b) : null; }
+function mmdd(iso){ var s=fmtDate(iso); return s? s.slice(5) : null; }
+function todayKST(){
+  return new Intl.DateTimeFormat("en-CA",{timeZone:KST,year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+}
+function ageOf(birthYear){
+  if(!birthYear) return null;
+  return Number(todayKST().slice(0,4)) - Number(birthYear);
+}
+function personMeta(c){
+  var bits = [];
+  if(c.birth_year) bits.push(c.birth_year + "년생");
+  var a = ageOf(c.birth_year); if(a!==null) bits.push(a + "세");
+  if(c.gender && GENDER[c.gender]) bits.push(GENDER[c.gender]);
+  return bits.join(" · ") || "기본 정보 없음";
+}
+function initialOf(name){ return (name||"?").trim().charAt(0) || "?"; }
+function dday(dueDate){
+  if(!dueDate) return {text:"기한 없음", cls:"chip--low"};
+  var t = todayKST();
+  var diff = Math.round((Date.parse(dueDate+"T00:00:00Z") - Date.parse(t+"T00:00:00Z")) / 86400000);
+  if(diff === 0)  return {text:"오늘", cls:"chip--high"};
+  if(diff < 0)    return {text:"D+" + (-diff), cls:"chip--high"};
+  if(diff <= 3)   return {text:"D-" + diff, cls:"chip--med"};
+  return {text:"D-" + diff, cls:"chip--low"};
+}
+function lines(arr){ return (arr||[]).join("\n"); }
+function toLines(text){
+  return String(text||"").split("\n").map(function(s){ return s.trim(); }).filter(Boolean);
+}
+function localInputNow(){
+  var d = new Date(), p = function(n){ return String(n).padStart(2,"0"); };
+  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes());
+}
+function mapLimit(items, limit, fn){
+  var out = new Array(items.length), i = 0;
+  function worker(){
+    if(i >= items.length) return Promise.resolve();
+    var idx = i++;
+    return Promise.resolve(fn(items[idx], idx)).then(function(r){ out[idx]=r; return worker(); });
+  }
+  var runners = [];
+  for(var k=0; k<Math.min(limit, items.length); k++) runners.push(worker());
+  return Promise.all(runners).then(function(){ return out; });
+}
+
+/* ============================================================
+   3. API 레이어
+   ============================================================ */
+function ApiError(code, message, status, raw){
+  this.name="ApiError"; this.code=code; this.message=message; this.status=status||0; this.raw=raw||null;
+}
+ApiError.prototype = Object.create(Error.prototype);
+
+function api(path, opts){
+  opts = opts || {};
+  var ctrl = new AbortController();
+  var timer = setTimeout(function(){ ctrl.abort(); }, opts.timeout || 30000);
+  var init = {method: opts.method || "GET", signal: ctrl.signal, headers: {}};
+  if(opts.form){ init.body = opts.form; }
+  else if(opts.body !== undefined){ init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.body); }
+
+  return fetch(API_BASE + path, init).then(function(res){
+    clearTimeout(timer);
+    return res.text().then(function(text){
+      var data = null;
+      if(text){ try{ data = JSON.parse(text); }catch(e){ data = null; } }
+      if(!res.ok){
+        var e = (data && data.error) ? data.error : null;
+        throw new ApiError(
+          (e && e.code) || ("HTTP_" + res.status),
+          (e && e.message) || ("요청이 실패했습니다 (HTTP " + res.status + ")"),
+          res.status, e
+        );
+      }
+      return data;
+    });
+  }).catch(function(err){
+    clearTimeout(timer);
+    if(err instanceof ApiError) throw err;
+    if(err && err.name === "AbortError") throw new ApiError("TIMEOUT","서버 응답이 없어 요청을 중단했습니다. 잠시 후 다시 시도해 주세요.",0);
+    throw new ApiError("NETWORK",
+      "API 서버에 연결하지 못했습니다. 네트워크 또는 브라우저의 외부 요청 차단(CSP·CORS)을 확인해 주세요.", 0);
+  });
+}
+
+/* ============================================================
+   4. 토스트 · 모달
+   ============================================================ */
+var toastRoot = $("#toasts");
+function toast(kind, title, body, ms){
+  var el = document.createElement("div");
+  el.className = "toast" + (kind ? " toast--" + kind : "");
+  el.innerHTML = '<div style="min-width:0"><b>'+esc(title)+"</b>"+(body?esc(body):"")+
+                 '</div><button class="x" aria-label="닫기">✕</button>';
+  el.querySelector(".x").addEventListener("click", function(){ el.remove(); });
+  toastRoot.appendChild(el);
+  setTimeout(function(){ el.remove(); }, ms || (kind === "err" ? 9000 : 4200));
+}
+function toastErr(err, fallback){
+  var msg = (err && err.message) || fallback || "알 수 없는 오류가 발생했습니다.";
+  var code = (err && err.code) ? err.code : "";
+  toast("err", code ? (code + " 오류") : "오류", msg);
+}
+
+var modalRoot = $("#modalRoot");
+var lastFocus = null;
+function closeModal(){
+  modalRoot.innerHTML = "";
+  document.removeEventListener("keydown", modalKey);
+  if(lastFocus && lastFocus.focus) lastFocus.focus();
+}
+function modalKey(e){ if(e.key === "Escape") closeModal(); }
+function openModal(title, bodyHtml, footerHtml){
+  lastFocus = document.activeElement;
+  modalRoot.innerHTML =
+    '<div class="scrim" data-scrim><div class="modal" role="dialog" aria-modal="true" aria-label="'+esc(title)+'">'+
+      '<div class="modal__h"><h2>'+esc(title)+'</h2><div class="spacer"></div>'+
+        '<button class="btn btn--ghost btn--sm" data-close>✕</button></div>'+
+      '<div class="modal__b">'+bodyHtml+"</div>"+
+      '<div class="modal__f">'+footerHtml+"</div>"+
+    "</div></div>";
+  modalRoot.querySelector("[data-scrim]").addEventListener("mousedown", function(e){
+    if(e.target === e.currentTarget) closeModal();
+  });
+  modalRoot.querySelector("[data-close]").addEventListener("click", closeModal);
+  document.addEventListener("keydown", modalKey);
+  var f = modalRoot.querySelector("input,textarea,select,button:not([data-close])");
+  if(f) f.focus();
+  return modalRoot.querySelector(".modal");
+}
+function confirmModal(title, message, okLabel, onOk){
+  var m = openModal(title,
+    '<p style="font-size:13.5px;color:var(--ink-2);line-height:1.7">'+message+"</p>",
+    '<button class="btn" data-cancel>취소</button><button class="btn btn--primary" data-ok>'+esc(okLabel)+"</button>");
+  m.querySelector("[data-cancel]").addEventListener("click", closeModal);
+  m.querySelector("[data-ok]").addEventListener("click", function(){
+    var b = this; b.disabled = true; b.textContent = "처리 중…";
+    Promise.resolve(onOk()).then(closeModal, function(err){
+      b.disabled = false; b.textContent = okLabel; toastErr(err);
     });
   });
+}
 
-  var stages = document.querySelectorAll('.stage');
-  var panels = document.querySelectorAll('.step');
-  stages.forEach(function(stage){
-    stage.addEventListener('click', function(){
-      stages.forEach(function(s){ s.removeAttribute('aria-current'); });
-      stage.setAttribute('aria-current','true');
-      panels.forEach(function(p){ p.hidden = (p.dataset.panel !== stage.dataset.step); });
+/* ============================================================
+   5. 상태
+   ============================================================ */
+var state = {
+  screen: "list",
+  search: "", offset: 0, riskOnly: false,
+  clients: null, total: 0, listErr: null, listToken: 0,
+  clientId: null, client: null, clientErr: null,
+  consultations: null, consultOffset: 0, consultTotal: 0, consultStatus: "",
+  actions: null, actionStatus: "TODO", actionPriority: "",
+  consultationId: null, consultation: null, workErr: null,
+  note: null, noteErr: null, analysis: null, analysisErr: null,
+  workStep: null, workPinned: false,
+  transcriptDraft: null, noteDraft: null,
+  report: null, reportErr: null, reportLoading: false, reportLimit: 10,
+  sidebar: {processing: null, todos: null}
+};
+var pollTimer = null;
+function stopPoll(){ if(pollTimer){ clearTimeout(pollTimer); pollTimer = null; } }
+
+/* ============================================================
+   6. 라우터
+   ============================================================ */
+function go(hash){ if(location.hash === hash) route(); else location.hash = hash; }
+function route(){
+  var h = location.hash.replace(/^#/, "") || "/clients";
+  var m;
+  stopPoll();
+  if((m = h.match(/^\/clients\/(\d+)\/report$/)))       { showScreen("report"); openReport(Number(m[1])); }
+  else if((m = h.match(/^\/clients\/(\d+)$/)))          { showScreen("detail"); openClient(Number(m[1])); }
+  else if((m = h.match(/^\/consultations\/(\d+)$/)))    { showScreen("work");   openConsultation(Number(m[1])); }
+  else if(h === "/tokens")                              { showScreen("tokens"); }
+  else                                                  { showScreen("list");   loadClients(); }
+  window.scrollTo(0,0);
+}
+var CRUMB = {list:"내담자", detail:"내담자 상세", work:"상담 처리", report:"사례회의 리포트", tokens:"디자인 토큰"};
+function showScreen(name){
+  state.screen = name;
+  document.querySelectorAll(".screen").forEach(function(s){
+    s.classList.toggle("is-active", s.id === "screen-" + name);
+  });
+  document.querySelectorAll(".navlink").forEach(function(l){
+    if(l.dataset.nav === name) l.setAttribute("aria-current","page"); else l.removeAttribute("aria-current");
+  });
+  $("#crumb").textContent = CRUMB[name] || "내담자";
+}
+function syncNav(){
+  var d = $("#navDetail"), w = $("#navWork"), r = $("#navReport");
+  d.disabled = !state.clientId; r.disabled = !state.clientId; w.disabled = !state.consultationId;
+}
+
+/* ============================================================
+   7. 공통 렌더 조각
+   ============================================================ */
+function skeleton(rows){
+  var h = "";
+  for(var i=0;i<(rows||4);i++) h += '<div class="skel" style="width:'+(60+((i*13)%38))+'%"></div>';
+  return '<div class="skelstack">'+h+"</div>";
+}
+function emptyBox(icon, title, desc){
+  return '<div class="empty"><span class="em">'+icon+'</span><b>'+esc(title)+"</b>"+
+         (desc? "<span>"+desc+"</span>" : "")+"</div>";
+}
+function errorBox(err, retryAttr){
+  return '<div class="empty"><span class="em">!</span><b>'+esc(err.message)+"</b>"+
+         (err.code? '<span class="mono" style="font-size:11px">'+esc(err.code)+"</span>" : "")+
+         (retryAttr? '<button class="btn btn--sm" '+retryAttr+" style=\"margin-top:6px\">다시 시도</button>" : "")+"</div>";
+}
+function statusChip(status){
+  if(status === "DONE")   return '<span class="chip chip--ok"><span class="dot"></span>완료</span>';
+  if(status === "FAILED") return '<span class="chip chip--high"><span class="dot"></span>실패</span>';
+  if(GATE[status])        return '<span class="chip chip--draft">'+esc(STATUS_LABEL[status])+"</span>";
+  if(BUSY[status])        return '<span class="chip chip--pri"><span class="dot dot--pulse"></span>'+esc(STATUS_LABEL[status])+"</span>";
+  return '<span class="chip chip--code">'+esc(status||"")+"</span>";
+}
+function statusGrid(cs, sourceLabel){
+  if(!cs) return emptyBox("○","확정된 상태 요약이 없습니다","확정된 상담일지가 생겨야 상태 요약이 만들어집니다.");
+  return '<div class="sgrid">' + CATS.map(function(c){
+    var vals = cs[c.key] || [];
+    var body = vals.length
+      ? "<ul>"+vals.map(function(v){ return "<li>"+esc(v)+"</li>"; }).join("")+"</ul>"
+      : '<span class="empty">확인된 내용 없음</span>';
+    return '<div><div class="k"><b>'+c.label+"</b>"+c.code+'</div><div class="v'+(vals.length?"":" empty")+'">'+body+"</div></div>";
+  }).join("") + "</div>" + (sourceLabel ? '<p class="dim" style="font-size:11.5px;margin-top:9px">'+sourceLabel+"</p>" : "");
+}
+function actionCard(a, opts){
+  opts = opts || {};
+  var cls = "action" + (a.status === "DONE" ? " is-done" : "") + (a.status === "DISMISSED" ? " is-dismissed" : "");
+  var d = dday(a.due_date);
+  return '<div class="'+cls+'" data-action-id="'+a.id+'">'+
+    '<button class="action__ck" data-toggle="'+a.id+'" title="'+(a.status==="DONE"?"완료 취소":"완료 처리")+'" aria-label="완료 처리">✓</button>'+
+    "<div><div class=\"action__t\">"+esc(a.title)+"</div>"+
+      '<div class="action__r">'+esc(a.reason || a.description || "")+"</div>"+
+      (opts.showDesc && a.description && a.description !== a.reason
+        ? '<div class="action__r" style="margin-top:3px">'+esc(a.description)+"</div>" : "")+
+    "</div>"+
+    '<div class="action__side">'+
+      '<span class="chip '+(PRIORITY_CHIP[a.priority]||"chip--low")+'">'+esc(PRIORITY[a.priority]||a.priority||"")+"</span>"+
+      '<span class="action__d">'+(a.due_date ? esc(a.due_date.slice(5)) : "기한 없음")+"</span>"+
+      '<span class="chip '+esc(d.cls)+'">'+esc(d.text)+"</span>"+
+      '<span class="chip chip--code">'+esc(ACTION_TYPE[a.action_type]||a.action_type||"")+"</span>"+
+      (a.status === "DISMISSED"
+        ? '<button class="btn btn--ghost btn--sm" data-undismiss="'+a.id+'">되돌리기</button>'
+        : '<button class="btn btn--ghost btn--sm" data-dismiss="'+a.id+'">제외</button>')+
+    "</div></div>";
+}
+function bindActionCards(root, onChanged){
+  root.querySelectorAll("[data-toggle]").forEach(function(b){
+    b.addEventListener("click", function(e){
+      e.stopPropagation();
+      var card = b.closest(".action"), id = Number(b.dataset.toggle);
+      var done = card.classList.contains("is-done");
+      applyAction(card, id, done ? "TODO" : "DONE", onChanged);
     });
   });
+  root.querySelectorAll("[data-dismiss]").forEach(function(b){
+    b.addEventListener("click", function(e){
+      e.stopPropagation();
+      applyAction(b.closest(".action"), Number(b.dataset.dismiss), "DISMISSED", onChanged);
+    });
+  });
+  root.querySelectorAll("[data-undismiss]").forEach(function(b){
+    b.addEventListener("click", function(e){
+      e.stopPropagation();
+      applyAction(b.closest(".action"), Number(b.dataset.undismiss), "TODO", onChanged);
+    });
+  });
+}
+function applyAction(card, id, status, onChanged){
+  card.classList.add("is-busy");
+  api("/actions/"+id, {method:"PATCH", body:{status:status}}).then(function(updated){
+    toast("ok","Action 상태를 변경했습니다", updated.title + " → " + status);
+    if(onChanged) onChanged(updated);
+  }).catch(function(err){
+    card.classList.remove("is-busy");
+    toastErr(err);
+  });
+}
 
-  document.querySelectorAll('.action').forEach(function(a){
-    a.addEventListener('click', function(){ a.classList.toggle('is-done'); });
+/* ============================================================
+   8. 화면 — 내담자 목록
+   ============================================================ */
+function loadClients(){
+  var token = ++state.listToken;
+  state.listErr = null;
+  if(state.clients === null) renderList();
+  var q = "/clients?limit="+PAGE+"&offset="+state.offset+
+          (state.search ? "&search="+encodeURIComponent(state.search) : "");
+  api(q).then(function(res){
+    if(token !== state.listToken) return;
+    state.clients = res.items || [];
+    state.total = res.total || 0;
+    $("#navClientCnt").textContent = state.total;
+    renderList();
+    loadListSidebars(token);
+  }).catch(function(err){
+    if(token !== state.listToken) return;
+    state.clients = []; state.listErr = err; renderList();
+  });
+}
+function loadListSidebars(token){
+  state.sidebar.processing = null; state.sidebar.todos = null;
+  var clients = state.clients || [];
+  var withConsults = clients.filter(function(c){ return c.last_consulted_at; }).slice(0,8);
+  var withActions  = clients.filter(function(c){ return c.pending_action_count > 0; }).slice(0,8);
+
+  mapLimit(withConsults, 4, function(c){
+    return api("/clients/"+c.id+"/consultations?limit=5&offset=0")
+      .then(function(r){ return {client:c, items:r.items||[]}; })
+      .catch(function(){ return {client:c, items:[]}; });
+  }).then(function(rows){
+    if(token !== state.listToken) return;
+    var out = [];
+    rows.forEach(function(r){
+      (r.items||[]).forEach(function(x){
+        if(x.status !== "DONE") out.push({client:r.client, consultation:x});
+      });
+    });
+    out.sort(function(a,b){ return String(b.consultation.consulted_at).localeCompare(String(a.consultation.consulted_at)); });
+    state.sidebar.processing = out.slice(0,8);
+    renderSidebarProcessing();
   });
 
-  var root = document.documentElement;
-  document.getElementById('themeToggle').addEventListener('click', function(){
-    root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  mapLimit(withActions, 4, function(c){
+    return api("/clients/"+c.id+"/actions?status=TODO&limit=5&offset=0")
+      .then(function(r){ return {client:c, items:r.items||[]}; })
+      .catch(function(){ return {client:c, items:[]}; });
+  }).then(function(rows){
+    if(token !== state.listToken) return;
+    var out = [];
+    rows.forEach(function(r){ (r.items||[]).forEach(function(a){ out.push({client:r.client, action:a}); }); });
+    out.sort(function(a,b){
+      var x = a.action.due_date || "9999-99-99", y = b.action.due_date || "9999-99-99";
+      return x === y ? a.action.id - b.action.id : x.localeCompare(y);
+    });
+    state.sidebar.todos = out.slice(0,8);
+    renderSidebarTodos();
   });
+}
+
+function renderList(){
+  var root = $("#screen-list");
+  var rows = state.clients;
+  var shown = rows ? (state.riskOnly ? rows.filter(function(c){ return c.has_important_risk; }) : rows) : null;
+  var pending = rows ? rows.reduce(function(s,c){ return s + (c.pending_action_count||0); }, 0) : 0;
+
+  var head = rows && rows.length
+    ? "이 페이지 내담자의 <em>"+pending+"건</em>이 후속조치를 기다립니다"
+    : "관리 중인 내담자";
+
+  var body;
+  if(state.listErr) body = errorBox(state.listErr, 'data-retry-list');
+  else if(rows === null) body = skeleton(5);
+  else if(!rows.length) body = emptyBox("○", state.search ? "검색 결과가 없습니다" : "등록된 내담자가 없습니다",
+      state.search ? "다른 이름으로 검색해 보세요." : "오른쪽 위 <b>+ 내담자 등록</b>으로 첫 내담자를 추가하세요.");
+  else if(!shown.length) body = emptyBox("○","위험신호가 있는 내담자가 없습니다","이 페이지에서 HIGH 위험신호가 확인된 내담자는 없습니다.");
+  else body = '<div class="tablewrap"><table><thead><tr>'+
+      "<th>내담자</th><th>마지막 상담</th><th>미완료 Action</th><th>위험신호</th><th>메모</th>"+
+    "</tr></thead><tbody>"+ shown.map(function(c){
+      return '<tr class="clickable" data-client="'+c.id+'" tabindex="0">'+
+        '<td><div class="who"><span class="ini">'+esc(initialOf(c.name))+"</span>"+
+          '<div><div class="nm">'+esc(c.name)+'</div><div class="meta">'+esc(personMeta(c))+"</div></div></div></td>"+
+        '<td class="num'+(c.last_consulted_at?"":" dim")+'">'+(fmtDate(c.last_consulted_at) || "상담 없음")+"</td>"+
+        '<td class="num">'+(c.pending_action_count||0)+"</td>"+
+        "<td>"+(c.has_important_risk
+          ? '<span class="chip chip--high"><span class="dot"></span>HIGH</span>'
+          : '<span class="dim">—</span>')+"</td>"+
+        '<td class="dim">'+(c.memo ? esc(c.memo) : "—")+"</td></tr>";
+    }).join("") + "</tbody></table></div>" + pagerHtml();
+
+  root.innerHTML =
+    '<div class="pagehead"><h1>'+head+"</h1>"+
+      '<span class="note">로그인 없이 기관 공용 데이터로 운영 · 표시되는 이름은 등록된 값 그대로</span></div>'+
+    '<div class="cols cols--list"><div class="panel">'+
+      '<div class="panel__head"><h2>관리 중인 내담자</h2>'+
+        '<span class="chip chip--code">GET /clients</span>'+
+        (state.search ? '<span class="chip chip--pri">검색: '+esc(state.search)+"</span>" : "")+
+        '<div class="spacer"></div>'+
+        '<button class="btn btn--sm'+(state.riskOnly?"":" is-on")+'" data-risk="0">전체</button>'+
+        '<button class="btn btn--sm'+(state.riskOnly?" is-on":"")+'" data-risk="1">위험신호 있음</button>'+
+      "</div>"+
+      '<div class="panel__body panel__body--flush">'+body+"</div>"+
+    "</div>"+
+    '<aside class="stack">'+
+      '<div class="panel"><div class="panel__head"><h2>처리 중인 상담</h2><div class="spacer"></div>'+
+        '<span class="chip chip--code" id="procCnt">–</span></div><div id="procBody">'+skeleton(3)+"</div></div>"+
+      '<div class="panel"><div class="panel__head"><h2>오늘 처리할 일</h2><div class="spacer"></div>'+
+        '<span class="chip chip--code" id="todoCnt">–</span></div><div id="todoBody">'+skeleton(3)+"</div></div>"+
+      '<div class="panel"><div class="panel__head"><h2>기록 원칙</h2></div><div class="panel__body">'+
+        '<ul class="principle">'+
+          "<li>상담에서 확인되지 않은 사실은 만들지 않습니다.</li>"+
+          '<li>불명확한 정보는 <span class="mono">확인 필요</span> · <span class="mono">UNKNOWN</span>으로 표시합니다.</li>'+
+          "<li>의료·법률적 진단은 하지 않습니다.</li>"+
+          "<li>확정하기 전까지 모든 값은 초안입니다.</li>"+
+        "</ul></div></div>"+
+    "</aside></div>";
+
+  root.querySelectorAll("[data-client]").forEach(function(tr){
+    tr.addEventListener("click", function(){ go("#/clients/"+tr.dataset.client); });
+    tr.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go("#/clients/"+tr.dataset.client); } });
+  });
+  root.querySelectorAll("[data-risk]").forEach(function(b){
+    b.addEventListener("click", function(){ state.riskOnly = b.dataset.risk === "1"; renderList(); renderSidebarProcessing(); renderSidebarTodos(); });
+  });
+  var rl = root.querySelector("[data-retry-list]"); if(rl) rl.addEventListener("click", loadClients);
+  root.querySelectorAll("[data-page]").forEach(function(b){
+    b.addEventListener("click", function(){
+      state.offset = Math.max(0, state.offset + Number(b.dataset.page) * PAGE);
+      loadClients(); window.scrollTo(0,0);
+    });
+  });
+  renderSidebarProcessing(); renderSidebarTodos();
+  syncNav();
+}
+function pagerHtml(){
+  if(state.total <= PAGE) return "";
+  var from = state.offset + 1, to = Math.min(state.offset + PAGE, state.total);
+  return '<div class="pager"><span class="mono">'+from+"–"+to+" / "+state.total+"</span><div class=\"spacer\"></div>"+
+    '<button class="btn btn--sm" data-page="-1"'+(state.offset<=0?" disabled":"")+">이전</button>"+
+    '<button class="btn btn--sm" data-page="1"'+(to>=state.total?" disabled":"")+">다음</button></div>";
+}
+function renderSidebarProcessing(){
+  var body = document.getElementById("procBody"), cnt = document.getElementById("procCnt");
+  if(!body) return;
+  var rows = state.sidebar.processing;
+  if(rows === null){ body.innerHTML = skeleton(3); cnt.textContent = "–"; return; }
+  cnt.textContent = rows.length;
+  if(!rows.length){ body.innerHTML = emptyBox("○","처리 중인 상담이 없습니다",""); return; }
+  body.innerHTML = '<ul class="minilist">'+rows.map(function(r){
+    return '<li style="padding:0"><button class="mi" data-goc="'+r.consultation.id+'">'+
+      '<span class="when">'+esc(mmdd(r.consultation.consulted_at)||"")+"</span>"+
+      "<span>"+esc(r.client.name)+"<br>"+statusChip(r.consultation.status)+"</span></button></li>";
+  }).join("")+"</ul>"+
+  '<p class="dim" style="font-size:11px;padding:9px 16px 12px">현재 페이지 상위 8명 기준</p>';
+  body.querySelectorAll("[data-goc]").forEach(function(b){
+    b.addEventListener("click", function(){ go("#/consultations/"+b.dataset.goc); });
+  });
+}
+function renderSidebarTodos(){
+  var body = document.getElementById("todoBody"), cnt = document.getElementById("todoCnt");
+  if(!body) return;
+  var rows = state.sidebar.todos;
+  if(rows === null){ body.innerHTML = skeleton(3); cnt.textContent = "–"; return; }
+  cnt.textContent = rows.length;
+  if(!rows.length){ body.innerHTML = emptyBox("○","미완료 Action이 없습니다",""); return; }
+  body.innerHTML = '<ul class="minilist">'+rows.map(function(r){
+    var d = dday(r.action.due_date);
+    return '<li style="padding:0"><button class="mi" data-god="'+r.client.id+'">'+
+      '<span class="when">'+esc(d.text)+"</span>"+
+      "<span>"+esc(r.client.name)+" · "+esc(r.action.title)+"</span></button></li>";
+  }).join("")+"</ul>"+
+  '<p class="dim" style="font-size:11px;padding:9px 16px 12px">현재 페이지 상위 8명의 TODO 기준</p>';
+  body.querySelectorAll("[data-god]").forEach(function(b){
+    b.addEventListener("click", function(){ go("#/clients/"+b.dataset.god); });
+  });
+}
+
+/* ============================================================
+   9. 내담자 등록
+   ============================================================ */
+function openNewClient(){
+  var m = openModal("내담자 등록",
+    '<div class="field"><label for="f_name">이름 또는 가명 <span style="color:var(--high)">*</span></label>'+
+      '<input class="inp" id="f_name" maxlength="100" placeholder="예: 김OO" required></div>'+
+    '<div class="grid2">'+
+      '<div class="field"><label for="f_birth">출생연도</label>'+
+        '<input class="inp mono" id="f_birth" type="number" min="1900" max="'+todayKST().slice(0,4)+'" placeholder="1945"></div>'+
+      '<div class="field"><label for="f_gender">성별</label><select class="sel" id="f_gender">'+
+        '<option value="">선택 안 함</option><option value="F">여성</option><option value="M">남성</option>'+
+        '<option value="OTHER">기타</option><option value="UNKNOWN">미상</option></select></div>'+
+    "</div>"+
+    '<div class="field"><label for="f_memo">메모</label>'+
+      '<textarea class="ta" id="f_memo" maxlength="2000" placeholder="예: 독거 / 딸 부산 거주"></textarea>'+
+      '<span class="hint">최대 2,000자. 상담에서 확인된 사실만 적어 주세요.</span></div>',
+    '<button class="btn" data-cancel>취소</button><button class="btn btn--primary" data-ok>등록</button>');
+
+  m.querySelector("[data-cancel]").addEventListener("click", closeModal);
+  m.querySelector("[data-ok]").addEventListener("click", function(){
+    var btn = this;
+    var name = m.querySelector("#f_name").value.trim();
+    if(!name){ toast("err","이름을 입력해 주세요","1~100자로 입력합니다."); m.querySelector("#f_name").focus(); return; }
+    var by = m.querySelector("#f_birth").value.trim();
+    var payload = {name:name};
+    if(by) payload.birth_year = Number(by);
+    var g = m.querySelector("#f_gender").value; if(g) payload.gender = g;
+    var memo = m.querySelector("#f_memo").value.trim(); if(memo) payload.memo = memo;
+
+    btn.disabled = true; btn.textContent = "등록 중…";
+    api("/clients", {method:"POST", body:payload}).then(function(c){
+      closeModal();
+      toast("ok","내담자를 등록했습니다", c.name);
+      state.search = ""; $("#searchInput").value = ""; state.offset = 0;
+      go("#/clients/"+c.id);
+    }).catch(function(err){
+      btn.disabled = false; btn.textContent = "등록";
+      toastErr(err);
+    });
+  });
+}
+
+/* ============================================================
+   10. 화면 — 내담자 상세
+   ============================================================ */
+function openClient(id){
+  if(state.clientId !== id){
+    state.client = null; state.clientErr = null;
+    state.consultations = null; state.consultOffset = 0; state.consultStatus = "";
+    state.actions = null; state.actionStatus = "TODO"; state.actionPriority = "";
+  }
+  state.clientId = id; syncNav(); renderDetail();
+  api("/clients/"+id).then(function(c){
+    if(state.clientId !== id) return;
+    state.client = c; renderDetail(); loadConsultations(); loadActions();
+  }).catch(function(err){
+    if(state.clientId !== id) return;
+    state.clientErr = err; renderDetail();
+  });
+}
+function loadConsultations(){
+  var id = state.clientId;
+  var q = "/clients/"+id+"/consultations?limit="+PAGE+"&offset="+state.consultOffset+
+          (state.consultStatus ? "&status="+state.consultStatus : "");
+  api(q).then(function(r){
+    if(state.clientId !== id) return;
+    state.consultations = r.items || []; state.consultTotal = r.total || 0; renderDetail();
+  }).catch(function(err){
+    if(state.clientId !== id) return;
+    state.consultations = []; toastErr(err); renderDetail();
+  });
+}
+function loadActions(){
+  var id = state.clientId;
+  var q = "/clients/"+id+"/actions?limit=50&offset=0"+
+          (state.actionStatus ? "&status="+state.actionStatus : "")+
+          (state.actionPriority ? "&priority="+state.actionPriority : "");
+  api(q).then(function(r){
+    if(state.clientId !== id) return;
+    state.actions = r.items || []; renderDetail();
+  }).catch(function(err){
+    if(state.clientId !== id) return;
+    state.actions = []; toastErr(err); renderDetail();
+  });
+}
+
+function renderDetail(){
+  var root = $("#screen-detail"), c = state.client;
+  if(state.clientErr){ root.innerHTML = '<div class="panel">'+errorBox(state.clientErr,'data-retry')+"</div>";
+    var rb = root.querySelector("[data-retry]"); if(rb) rb.addEventListener("click", function(){ openClient(state.clientId); });
+    return; }
+  if(!c){ root.innerHTML = '<div class="panel">'+skeleton(6)+"</div>"; return; }
+
+  var sourceLabel = c.current_status_consultation_id
+    ? "출처: 상담 #"+c.current_status_consultation_id+" (확정된 기록 기준)" : "";
+
+  root.innerHTML =
+    '<div class="pagehead"><h1>'+esc(c.name)+"</h1>"+
+      '<span class="chip chip--code">GET /clients/'+c.id+"</span>"+
+      (c.has_important_risk ? '<span class="chip chip--high"><span class="dot"></span>HIGH 위험신호</span>' : "")+
+      '<span class="note">'+(c.last_consulted_at ? "최근 상담 "+esc(fmtDate(c.last_consulted_at)) : "상담 기록 없음")+"</span></div>"+
+    '<div class="cols cols--detail">'+
+      '<aside class="stack">'+
+        '<div class="panel"><div class="panel__body stack">'+
+          '<div class="row" style="gap:13px">'+
+            '<span class="ini" style="width:48px;height:48px;border-radius:14px;font-size:20px">'+esc(initialOf(c.name))+"</span>"+
+            '<div><div style="font-size:17px;font-weight:700">'+esc(c.name)+"</div>"+
+              '<div class="dim" style="font-size:12.5px">'+esc(personMeta(c))+"</div></div></div>"+
+          '<hr class="hr">'+
+          '<div><div class="eyebrow" style="margin-bottom:5px">메모</div>'+
+            '<div style="font-size:13px">'+(c.memo ? esc(c.memo) : '<span class="dim">기록된 메모 없음</span>')+"</div></div>"+
+          '<div class="row" style="gap:22px">'+
+            '<div><div class="eyebrow">미완료 ACTION</div><div class="mono" style="font-size:20px;font-weight:700">'+(c.pending_action_count||0)+"</div></div>"+
+            '<div><div class="eyebrow">등록일</div><div class="mono" style="font-size:13px;padding-top:5px">'+esc(fmtDate(c.created_at)||"–")+"</div></div>"+
+          "</div>"+
+          '<button class="btn btn--primary btn--block" data-upload>녹음 파일 업로드</button>'+
+          '<button class="btn btn--block" data-report>사례회의 리포트 생성</button>'+
+        "</div></div>"+
+
+        '<div class="panel"><div class="panel__head"><h2>Action</h2><div class="spacer"></div>'+
+          '<span class="chip chip--code">'+(state.actions ? state.actions.length : "–")+"</span></div>"+
+          '<div class="panel__body" style="padding-bottom:8px">'+
+            '<div class="row" style="gap:6px">'+
+              ["TODO","DONE","DISMISSED",""].map(function(s){
+                var lbl = s === "" ? "전체" : (s === "TODO" ? "미완료" : (s === "DONE" ? "완료" : "제외"));
+                return '<button class="btn btn--sm'+(state.actionStatus===s?" is-on":"")+'" data-astat="'+s+'">'+lbl+"</button>";
+              }).join("")+
+            "</div></div>"+
+          '<div class="panel__body" style="padding-top:8px" id="actionBody">'+
+            (state.actions === null ? skeleton(3)
+              : (!state.actions.length ? emptyBox("○","해당하는 Action이 없습니다","")
+                : '<div class="actions">'+state.actions.map(function(a){ return actionCard(a); }).join("")+"</div>"))+
+          "</div></div>"+
+      "</aside>"+
+
+      '<div class="stack">'+
+        '<div class="panel"><div class="panel__head"><h2>현재 상태</h2>'+
+          (c.current_status ? '<span class="chip chip--ok"><span class="dot"></span>확정 기록 기준</span>' : '<span class="chip chip--code">데이터 없음</span>')+
+          '<div class="spacer"></div></div>'+
+          '<div class="panel__body">'+statusGrid(c.current_status, sourceLabel)+"</div></div>"+
+
+        '<div class="panel"><div class="panel__head"><h2>상담 이력</h2>'+
+          '<div class="spacer"></div>'+
+          '<select class="sel" style="width:auto;padding:5px 28px 5px 10px;font-size:12px" data-cstat>'+
+            '<option value="">전체 상태</option>'+
+            Object.keys(STATUS_LABEL).map(function(k){
+              return '<option value="'+k+'"'+(state.consultStatus===k?" selected":"")+">"+STATUS_LABEL[k]+"</option>";
+            }).join("")+
+          "</select>"+
+          '<span class="chip chip--code">'+(state.consultations ? state.consultTotal : "–")+"건</span></div>"+
+          '<div class="panel__body panel__body--flush">'+consultTableHtml()+"</div></div>"+
+      "</div></div>";
+
+  root.querySelector("[data-upload]").addEventListener("click", function(){ openUpload(c); });
+  root.querySelector("[data-report]").addEventListener("click", function(){ go("#/clients/"+c.id+"/report"); });
+  root.querySelectorAll("[data-astat]").forEach(function(b){
+    b.addEventListener("click", function(){ state.actionStatus = b.dataset.astat; state.actions = null; renderDetail(); loadActions(); });
+  });
+  var cs = root.querySelector("[data-cstat]");
+  if(cs) cs.addEventListener("change", function(){
+    state.consultStatus = cs.value; state.consultOffset = 0; state.consultations = null; renderDetail(); loadConsultations();
+  });
+  root.querySelectorAll("[data-consult]").forEach(function(tr){
+    tr.addEventListener("click", function(){ go("#/consultations/"+tr.dataset.consult); });
+    tr.addEventListener("keydown", function(e){ if(e.key==="Enter"){ go("#/consultations/"+tr.dataset.consult); } });
+  });
+  root.querySelectorAll("[data-cpage]").forEach(function(b){
+    b.addEventListener("click", function(){
+      state.consultOffset = Math.max(0, state.consultOffset + Number(b.dataset.cpage)*PAGE);
+      state.consultations = null; renderDetail(); loadConsultations();
+    });
+  });
+  bindActionCards(root, function(){ openClient(state.clientId); });
+}
+function consultTableHtml(){
+  var rows = state.consultations;
+  if(rows === null) return skeleton(4);
+  if(!rows.length) return emptyBox("○","상담 기록이 없습니다","왼쪽 <b>녹음 파일 업로드</b>로 첫 상담을 등록하세요.");
+  var pager = "";
+  if(state.consultTotal > PAGE){
+    var from = state.consultOffset+1, to = Math.min(state.consultOffset+PAGE, state.consultTotal);
+    pager = '<div class="pager"><span class="mono">'+from+"–"+to+" / "+state.consultTotal+'</span><div class="spacer"></div>'+
+      '<button class="btn btn--sm" data-cpage="-1"'+(state.consultOffset<=0?" disabled":"")+">이전</button>"+
+      '<button class="btn btn--sm" data-cpage="1"'+(to>=state.consultTotal?" disabled":"")+">다음</button></div>";
+  }
+  return '<div class="tablewrap"><table><thead><tr><th>상담일</th><th>요약</th><th>상태</th><th>확정 시각</th></tr></thead><tbody>'+
+    rows.map(function(x){
+      return '<tr class="clickable" data-consult="'+x.id+'" tabindex="0">'+
+        '<td class="num">'+esc(fmtDate(x.consulted_at)||"–")+"</td>"+
+        "<td>"+(x.summary ? esc(x.summary) : '<span class="dim">요약 없음 · 처리 중</span>')+"</td>"+
+        "<td>"+statusChip(x.status)+"</td>"+
+        '<td class="num dim">'+(x.counseling_note_confirmed_at ? esc(fmtTime(x.counseling_note_confirmed_at)) : "—")+"</td></tr>";
+    }).join("")+"</tbody></table></div>"+pager;
+}
+
+/* ============================================================
+   11. 녹음 파일 업로드
+   ============================================================ */
+function openUpload(client){
+  var m = openModal("녹음 파일 업로드 · "+client.name,
+    '<div class="banner"><span class="bi">i</span><span>업로드하면 <b>음성 → 텍스트 변환만</b> 시작합니다. '+
+      "상담일지·위험신호는 상담자가 전사문을 확정한 뒤에 만들어집니다.</span></div>"+
+    '<div class="field"><label for="f_audio">녹음 파일 <span style="color:var(--high)">*</span></label>'+
+      '<input class="inp" id="f_audio" type="file" accept="audio/*">'+
+      '<span class="hint">파일 1개. 서버가 확장자와 실제 내용을 함께 검증합니다.</span></div>'+
+    '<div class="field"><label for="f_when">상담 시각 <span style="color:var(--high)">*</span></label>'+
+      '<input class="inp mono" id="f_when" type="datetime-local" value="'+localInputNow()+'">'+
+      '<span class="hint">업로드 시각이 아니라 실제로 상담한 시각을 입력합니다.</span></div>',
+    '<button class="btn" data-cancel>취소</button><button class="btn btn--primary" data-ok>업로드 · 변환 시작</button>');
+
+  m.querySelector("[data-cancel]").addEventListener("click", closeModal);
+  m.querySelector("[data-ok]").addEventListener("click", function(){
+    var btn = this;
+    var f = m.querySelector("#f_audio").files[0];
+    var when = m.querySelector("#f_when").value;
+    if(!f){ toast("err","녹음 파일을 선택해 주세요",""); return; }
+    if(!when){ toast("err","상담 시각을 입력해 주세요",""); return; }
+    var iso = new Date(when);
+    if(isNaN(iso.getTime())){ toast("err","상담 시각 형식이 올바르지 않습니다",""); return; }
+
+    var fd = new FormData();
+    fd.append("audio", f);
+    fd.append("consulted_at", iso.toISOString());
+
+    btn.disabled = true; btn.textContent = "업로드 중…";
+    api("/clients/"+client.id+"/consultations", {method:"POST", form:fd, timeout:180000}).then(function(res){
+      closeModal();
+      toast("ok","업로드를 접수했습니다","상담 #"+res.consultation_id+" · "+(STATUS_LABEL[res.status]||res.status));
+      go("#/consultations/"+res.consultation_id);
+    }).catch(function(err){
+      btn.disabled = false; btn.textContent = "업로드 · 변환 시작";
+      toastErr(err);
+    });
+  });
+}
+
+/* ============================================================
+   12. 화면 — 상담 처리
+   ============================================================ */
+function openConsultation(id){
+  if(state.consultationId !== id){
+    state.consultation = null; state.workErr = null;
+    state.note = null; state.noteErr = null; state.analysis = null; state.analysisErr = null;
+    state.workStep = null; state.workPinned = false;
+    state.transcriptDraft = null; state.noteDraft = null;
+  }
+  state.consultationId = id; syncNav(); renderWork();
+  loadConsultation(id, false);
+}
+function loadConsultation(id, silent){
+  return api("/consultations/"+id).then(function(c){
+    if(state.consultationId !== id) return;
+    var prev = state.consultation ? state.consultation.status : null;
+    state.consultation = c; state.workErr = null;
+    if(prev !== c.status){
+      state.transcriptDraft = null; state.noteDraft = null;
+      if(!state.workPinned) state.workStep = defaultStep(c);
+      loadStepData(id, c);
+    }
+    if(!state.workStep) state.workStep = defaultStep(c);
+    if(state.clientId !== c.client_id || !state.client){
+      state.clientId = c.client_id;
+      api("/clients/"+c.client_id).then(function(cl){
+        if(state.consultationId !== id) return;
+        state.client = cl; syncNav(); renderWork();
+      }).catch(function(){});
+    }
+    renderWork();
+    scheduleNextPoll(id, c);
+  }).catch(function(err){
+    if(state.consultationId !== id) return;
+    if(silent) return;
+    state.workErr = err; renderWork();
+  });
+}
+function defaultStep(c){
+  if(c.status === "FAILED"){
+    var st = c.failure && c.failure.stage;
+    if(st === "GENERATING_NOTE") return "note";
+    if(st === "ANALYZING") return "analysis";
+    return "transcript";
+  }
+  var i = FLOW_INDEX[c.status];
+  return i === undefined ? "transcript" : FLOW[i].step;
+}
+/* 상담일지·분석은 해당 단계에 도달한 뒤에만 존재한다.
+   도달 전에는 호출하지 않고 "아직 만들어지지 않았다"고 그대로 알린다. */
+function noteReachable(c){
+  if(c.status === "FAILED"){
+    var st = c.failure && c.failure.stage;
+    return st === "GENERATING_NOTE" || st === "ANALYZING";
+  }
+  var i = FLOW_INDEX[c.status];
+  return i !== undefined && i >= FLOW_INDEX.GENERATING_NOTE;
+}
+function analysisReachable(c){
+  if(c.status === "FAILED") return (c.failure && c.failure.stage) === "ANALYZING";
+  return c.status === "DONE";
+}
+function loadStepData(id, c){
+  var reachedNote = noteReachable(c);
+  var reachedAnalysis = analysisReachable(c);
+  if(reachedNote && state.note === null && state.noteErr === null){
+    api("/consultations/"+id+"/counseling-note").then(function(n){
+      if(state.consultationId !== id) return; state.note = n; renderWork();
+    }).catch(function(err){
+      if(state.consultationId !== id) return; state.noteErr = err; renderWork();
+    });
+  }
+  if(reachedAnalysis && state.analysis === null && state.analysisErr === null){
+    api("/consultations/"+id+"/analysis").then(function(a){
+      if(state.consultationId !== id) return; state.analysis = a; renderWork();
+    }).catch(function(err){
+      if(state.consultationId !== id) return; state.analysisErr = err; renderWork();
+    });
+  }
+}
+function scheduleNextPoll(id, c){
+  stopPoll();
+  if(state.screen !== "work" || !BUSY[c.status]) return;
+  pollTimer = setTimeout(function(){
+    if(state.screen !== "work" || state.consultationId !== id) return;
+    loadConsultation(id, true);
+  }, 2500);
+}
+
+function renderWork(){
+  var root = $("#screen-work");
+  if(state.workErr){
+    root.innerHTML = '<div class="panel">'+errorBox(state.workErr,'data-retry')+"</div>";
+    root.querySelector("[data-retry]").addEventListener("click", function(){ openConsultation(state.consultationId); });
+    return;
+  }
+  var c = state.consultation;
+  if(!c){ root.innerHTML = '<div class="panel">'+skeleton(6)+"</div>"; return; }
+
+  var step = state.workStep || defaultStep(c);
+  root.innerHTML =
+    '<div class="pagehead"><h1>상담 처리</h1>'+
+      '<span class="chip chip--code">consultation #'+c.id+"</span>"+
+      (state.client ? '<span class="chip chip--pri">'+esc(state.client.name)+"</span>" : "")+
+      statusChip(c.status)+
+      '<span class="note">'+esc(fmtDT(c.consulted_at)||"")+" 상담</span></div>"+
+    (c.status === "FAILED" ? failureBanner(c) : "")+
+    '<div class="cols cols--work" style="margin-top:'+(c.status==="FAILED"?"16px":"0")+'">'+
+      '<aside class="panel rail">'+railHtml(c, step)+"</aside>"+
+      "<div>"+stepPanel(c, step)+"</div>"+
+      '<aside class="stack">'+workAsideHtml(c)+"</aside>"+
+    "</div>";
+
+  root.querySelectorAll("[data-step]").forEach(function(b){
+    b.addEventListener("click", function(){ state.workStep = b.dataset.step; state.workPinned = true; renderWork(); });
+  });
+  bindStepPanel(root, c, step);
+  root.querySelectorAll("[data-goclient]").forEach(function(b){
+    b.addEventListener("click", function(){ go("#/clients/"+b.dataset.goclient); });
+  });
+}
+function failureBanner(c){
+  var f = c.failure || {};
+  return '<div class="banner banner--bad"><span class="bi">!</span><span>'+
+    "<b>처리에 실패했습니다.</b> "+esc(f.message || "원인을 확인할 수 없습니다.")+
+    '<br><span class="mono dim" style="font-size:11px">stage '+esc(f.stage||"–")+" · code "+esc(f.code||"–")+"</span>"+
+    "<br>이미 저장된 전사문·상담일지는 그대로 조회할 수 있습니다. 재실행 API는 제공되지 않으므로 새 녹음을 업로드하면 새 상담이 생성됩니다.</span></div>";
+}
+function railHtml(c, step){
+  var cur = FLOW_INDEX[c.status];
+  var failStage = c.status === "FAILED" && c.failure ? c.failure.stage : null;
+  var failIdx = failStage !== null ? FLOW_INDEX[failStage] : undefined;
+  var h = '<div class="rail__t"><div class="eyebrow">처리 단계</div></div>';
+  FLOW.forEach(function(s, i){
+    var cls = "stage";
+    if(c.status === "FAILED"){
+      if(failIdx !== undefined && i < failIdx) cls += " stage--done";
+      else if(failIdx !== undefined && i === failIdx) cls += " stage--fail";
+    } else if(cur !== undefined){
+      if(i < cur) cls += " stage--done";
+      else if(i === cur) cls += (GATE[s.code] ? " stage--gate" : " stage--active");
+    }
+    if(s.gate && i !== cur) cls += " stage--gate";
+    h += '<button class="'+cls+'" data-step="'+s.step+'"'+(step===s.step?' aria-current="true"':"")+">"+
+      '<span class="stage__gut"><span class="stage__b">'+(i<cur||(failIdx!==undefined&&i<failIdx)?"✓":(i===failIdx?"!":""))+"</span>"+
+        (i < FLOW.length-1 ? '<span class="stage__l"></span>' : "")+"</span>"+
+      '<span><span class="stage__n">'+s.name+'</span><span class="stage__c">'+s.code+"</span></span></button>";
+    if(s.gate) h += '<div class="gate">상담자 확정 필요</div>';
+  });
+  return h;
+}
+function workAsideHtml(c){
+  var cl = state.client;
+  var h = '<div class="panel"><div class="panel__head"><h2>이 내담자</h2></div><div class="panel__body stack" style="gap:12px">';
+  if(cl){
+    h += '<div><div style="font-size:15px;font-weight:700">'+esc(cl.name)+"</div>"+
+         '<div class="dim" style="font-size:12px">'+esc(personMeta(cl))+"</div></div>"+
+         '<div class="dim" style="font-size:12.5px">'+(cl.memo?esc(cl.memo):"기록된 메모 없음")+"</div>"+
+         '<hr class="hr"><div class="row" style="gap:22px">'+
+           '<div><div class="eyebrow">미완료 ACTION</div><div class="mono" style="font-size:20px;font-weight:700">'+(cl.pending_action_count||0)+"</div></div>"+
+         "</div>"+
+         '<button class="btn btn--sm" data-goclient="'+cl.id+'">내담자 상세로 이동</button>';
+  } else { h += skeleton(3); }
+  h += "</div></div>";
+
+  if(cl && cl.recent_consultations && cl.recent_consultations.length){
+    h += '<div class="panel"><div class="panel__head"><h2>지난 상담</h2></div><ul class="minilist">'+
+      cl.recent_consultations.filter(function(x){ return x.id !== c.id; }).slice(0,5).map(function(x){
+        return "<li><span class=\"when\">"+esc(mmdd(x.consulted_at)||"")+"</span><span>"+
+          (x.summary ? esc(x.summary) : '<span class="dim">요약 없음</span>')+"</span></li>";
+      }).join("")+"</ul></div>";
+  }
+  h += '<div class="panel"><div class="panel__head"><h2>상태 배지</h2></div><div class="panel__body">'+
+    '<div class="legend">'+FLOW.map(function(s){
+      return '<span class="chip '+(s.code===c.status?"chip--pri":"chip--code")+'">'+s.code+"</span>";
+    }).join("")+'<span class="chip '+(c.status==="FAILED"?"chip--high":"chip--code")+'">FAILED</span></div></div></div>';
+  return h;
+}
+
+/* --- (a) 전사문 --------------------------------------------------------- */
+function transcriptPanel(c){
+  var editable = c.status === "AWAITING_TRANSCRIPT_REVIEW";
+  var value = state.transcriptDraft !== null ? state.transcriptDraft : (c.transcript || "");
+  var head = '<div class="worktop"><h2>전사문 검토</h2>'+
+    (c.transcript_confirmed_at
+      ? '<span class="chip chip--ok"><span class="dot"></span>확정 '+esc(fmtDT(c.transcript_confirmed_at))+"</span>"
+      : '<span class="chip chip--draft">STT 초안</span>')+
+    '<div class="spacer"></div>'+
+    (editable
+      ? '<button class="btn btn--sm" data-tsave>수정 내용 저장</button>'+
+        '<button class="btn btn--primary btn--sm" data-tconfirm>전사문 확정 · 상담일지 생성</button>'
+      : '<span class="dim" style="font-size:11.5px">'+(c.transcript_confirmed_at?"확정되어 수정할 수 없습니다":"검토 대기 상태에서만 수정할 수 있습니다")+"</span>")+
+    "</div>";
+
+  var body;
+  if(!c.transcript && BUSY[c.status]){
+    body = '<div class="working"><span class="spin"></span>'+esc(STATUS_LABEL[c.status])+" · 2.5초마다 상태를 확인합니다</div>";
+  } else if(!c.transcript){
+    body = emptyBox("○","전사문이 아직 없습니다","");
+  } else if(editable){
+    body =
+      '<div class="banner"><span class="bi">i</span><span><b>확정하면 전사문은 수정할 수 없습니다.</b> '+
+        "확정 시점에는 상담일지 초안 생성만 시작하며, 위험신호와 추천 Action은 아직 만들지 않습니다.</span></div>"+
+      '<div class="doc doc--draft"><div class="doc__bar">'+
+        '<span class="eyebrow">'+esc(fmtDT(c.consulted_at)||"")+" 상담</span>"+
+        '<div class="spacer"></div><span class="dim" style="font-size:11.5px">원본 음성은 전사 후 삭제됩니다</span></div>'+
+        '<textarea class="ta" id="taTranscript" rows="16" style="background:var(--surface)">'+esc(value)+"</textarea>"+
+        '<p class="dim" style="font-size:11.5px;margin-top:8px">최대 200,000자 · 저장은 상태를 바꾸지 않습니다.</p></div>';
+  } else {
+    body = '<div class="doc"><div class="doc__bar">'+
+      '<span class="eyebrow">'+esc(fmtDT(c.consulted_at)||"")+" 상담</span>"+
+      '<div class="spacer"></div><span class="dim" style="font-size:11.5px">확정된 전사문</span></div>'+
+      renderTranscript(c.transcript)+"</div>";
+  }
+  return '<div class="panel">'+head+'<div class="panel__body stack">'+body+
+    '<div class="row"><span class="chip chip--code">PATCH /consultations/'+c.id+"/transcript</span>"+
+    '<span class="chip chip--code">POST /consultations/'+c.id+"/transcript/confirm</span></div></div></div>";
+}
+function renderTranscript(text){
+  var rows = String(text).split("\n").filter(function(l){ return l.trim(); });
+  var html = rows.map(function(l){
+    var m = l.match(/^\s*([^:：]{1,20})\s*[:：]\s*([\s\S]*)$/);
+    if(!m) return '<div class="turn turn--plain"><span class="turn__s">'+esc(l)+"</span></div>";
+    var who = m[1].trim(), said = m[2];
+    var isClient = !/사회복지사|상담[사원자]|복지사|worker/i.test(who);
+    return '<div class="turn'+(isClient?" turn--c":"")+'"><span class="turn__w">'+esc(who)+"</span>"+
+           '<span class="turn__s">'+esc(said)+"</span></div>";
+  }).join("");
+  return '<div class="transcript">'+html+"</div>";
+}
+
+/* --- (b) 상담일지 ------------------------------------------------------- */
+function notePanel(c){
+  var editable = c.status === "AWAITING_NOTE_REVIEW";
+  var head = '<div class="worktop"><h2>상담일지 검토</h2>'+
+    (c.counseling_note_confirmed_at
+      ? '<span class="chip chip--ok"><span class="dot"></span>확정 '+esc(fmtDT(c.counseling_note_confirmed_at))+"</span>"
+      : '<span class="chip chip--draft">AI 초안 · 수정 가능</span>')+
+    '<div class="spacer"></div>'+
+    (editable
+      ? '<button class="btn btn--sm" data-nsave>저장</button>'+
+        '<button class="btn btn--primary btn--sm" data-nconfirm>상담일지 확정 · 분석 시작</button>'
+      : '<span class="dim" style="font-size:11.5px">'+(c.counseling_note_confirmed_at?"확정되어 수정할 수 없습니다":"검토 대기 상태에서만 수정할 수 있습니다")+"</span>")+
+    "</div>";
+
+  var body;
+  if(state.noteErr){
+    body = state.noteErr.code === "RESULT_NOT_READY"
+      ? '<div class="working"><span class="spin"></span>상담일지 초안이 아직 생성되지 않았습니다</div>'
+      : errorBox(state.noteErr, "data-nretry");
+  } else if(state.note === null){
+    body = !noteReachable(c)
+      ? emptyBox("○","상담일지 초안이 아직 없습니다",
+          "전사문을 확정하면 초안 생성이 시작됩니다.<br>현재 상태: <b>"+esc(STATUS_LABEL[c.status]||c.status)+"</b>")
+      : (BUSY[c.status]
+        ? '<div class="working"><span class="spin"></span>'+esc(STATUS_LABEL[c.status])+"</div>"
+        : skeleton(5));
+  } else {
+    var n = state.note;
+    var d = state.noteDraft || {
+      summary: n.summary || "",
+      main_contents: lines(n.main_contents),
+      client_status: CATS.reduce(function(o,cat){ o[cat.key] = lines((n.client_status||{})[cat.key]); return o; }, {})
+    };
+    if(editable){
+      body =
+        '<div class="banner"><span class="bi">i</span><span>여기서 <b>고친 내용이 그대로</b> 위험신호와 추천 Action의 근거가 됩니다. '+
+          "지운 내용은 다시 살아나지 않습니다.</span></div>"+
+        '<div class="doc doc--draft fieldset">'+
+          '<div><div class="flabel"><h3>상담 요약</h3><span class="chip chip--draft">초안</span>'+
+            '<span class="dim" style="font-size:11px">1~5,000자</span></div>'+
+            '<textarea class="ta" id="nSummary" rows="3" style="background:var(--surface)">'+esc(d.summary)+"</textarea></div>"+
+          '<hr class="hr">'+
+          '<div><div class="flabel"><h3>주요 상담 내용</h3><span class="chip chip--draft">한 줄에 한 항목</span>'+
+            '<span class="dim" style="font-size:11px">최대 100개</span></div>'+
+            '<textarea class="ta" id="nMain" rows="6" style="background:var(--surface)">'+esc(d.main_contents)+"</textarea></div>"+
+          '<hr class="hr">'+
+          '<div><div class="flabel"><h3>내담자 상태</h3><span class="chip chip--draft">6개 항목 고정 · 한 줄에 한 항목</span></div>'+
+            '<div class="sgrid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">'+
+              CATS.map(function(cat){
+                return "<div><div class=\"k\"><b>"+cat.label+"</b>"+cat.code+"</div>"+
+                  '<textarea class="ta" data-cat="'+cat.key+'" rows="3" style="min-height:66px;font-size:12.5px">'+esc(d.client_status[cat.key])+"</textarea></div>";
+              }).join("")+
+            "</div></div>"+
+        "</div>";
+    } else {
+      body =
+        '<div class="doc"><div class="doc__bar">'+
+          '<span class="eyebrow">'+(n.confirmed_at ? "확정 "+esc(fmtDT(n.confirmed_at)) : "초안 "+esc(fmtDT(n.created_at)||""))+"</span></div>"+
+          '<div class="fieldset">'+
+            '<div><div class="flabel"><h3>상담 요약</h3></div><div style="font-size:14px">'+esc(n.summary||"—")+"</div></div>"+
+            '<hr class="hr">'+
+            '<div><div class="flabel"><h3>주요 상담 내용</h3></div>'+
+              ((n.main_contents||[]).length
+                ? '<ul class="bullets">'+n.main_contents.map(function(x){ return "<li>"+esc(x)+"</li>"; }).join("")+"</ul>"
+                : '<span class="dim">기록된 내용 없음</span>')+"</div>"+
+            '<hr class="hr">'+
+            '<div><div class="flabel"><h3>내담자 상태</h3></div>'+statusGrid(n.client_status)+"</div>"+
+          "</div></div>";
+    }
+  }
+  return '<div class="panel">'+head+'<div class="panel__body stack">'+body+
+    '<div class="row"><span class="chip chip--code">GET · PATCH /consultations/'+c.id+"/counseling-note</span>"+
+    '<span class="chip chip--code">POST /consultations/'+c.id+"/counseling-note/confirm</span></div></div></div>";
+}
+
+/* --- (c) 분석 ----------------------------------------------------------- */
+function analysisPanel(c){
+  var head = '<div class="worktop"><h2>후속 분석 결과</h2>'+
+    (c.status === "DONE" ? '<span class="chip chip--ok"><span class="dot"></span>확정 기록</span>' : statusChip(c.status))+
+    '<div class="spacer"></div>'+
+    (state.analysis && state.analysis.compared_consultation_ids && state.analysis.compared_consultation_ids.length
+      ? '<span class="dim mono" style="font-size:11.5px">비교 상담 '+state.analysis.compared_consultation_ids.map(function(i){return "#"+i;}).join(", ")+"</span>"
+      : '<span class="dim mono" style="font-size:11.5px">GET /consultations/'+c.id+"/analysis</span>")+
+    "</div>";
+
+  var body;
+  if(state.analysisErr){
+    body = state.analysisErr.code === "RESULT_NOT_READY"
+      ? '<div class="working"><span class="spin"></span>후속 분석이 아직 완료되지 않았습니다</div>'
+      : errorBox(state.analysisErr, "data-aretry");
+  } else if(state.analysis === null){
+    body = !analysisReachable(c)
+      ? (BUSY[c.status]
+        ? '<div class="working"><span class="spin"></span>'+esc(STATUS_LABEL[c.status])+" · 완료되면 자동으로 표시됩니다</div>"
+        : emptyBox("○","아직 분석 단계가 아닙니다",
+            "상담일지를 확정하면 위험신호·상태변화·추천 Action이 만들어집니다.<br>현재 상태: <b>"+esc(STATUS_LABEL[c.status]||c.status)+"</b>"))
+      : skeleton(6);
+  } else {
+    var a = state.analysis;
+    body =
+      "<div>"+'<div class="eyebrow" style="margin-bottom:10px">이번 상담에서 확인된 변화 · '+(a.important_changes||[]).length+"건</div>"+
+        ((a.important_changes||[]).length ? "<div>"+a.important_changes.map(function(ch){
+          var meta = CHANGE_META[ch.change] || CHANGE_META.UNKNOWN;
+          var cat = CAT_BY_CODE[ch.category] || {label: ch.category, code: ch.category};
+          return '<div class="change '+meta.cls+'"><span class="change__a">'+meta.arrow+"</span>"+
+            '<span class="change__c">'+esc(cat.label)+"<small>"+esc(cat.code)+" · "+esc(ch.change)+"</small></span>"+
+            '<span class="change__m">'+
+              (ch.previous ? '<span class="change__p">'+esc(ch.previous)+'</span><span class="change__t">→</span>' : "")+
+              (ch.current ? "<b>"+esc(ch.current)+"</b>" : '<span class="dim">현재 값 없음</span>')+
+              (ch.description ? '<span class="change__d">'+esc(ch.description)+"</span>" : "")+
+            "</span></div>";
+        }).join("")+"</div>" : emptyBox("○","확인된 상태 변화가 없습니다",""))+
+      "</div><hr class=\"hr\">"+
+
+      "<div>"+'<div class="eyebrow" style="margin-bottom:10px">위험신호 · '+(a.risk_flags||[]).length+"건</div>"+
+        ((a.risk_flags||[]).length ? '<div class="stack" style="gap:10px">'+a.risk_flags.map(function(r){
+          var sev = r.severity === "HIGH" ? "risk--high" : (r.severity === "MEDIUM" ? "risk--med" : "");
+          return '<div class="risk '+sev+'"><span class="risk__s"></span><div>'+
+            '<div class="risk__h"><h4>'+esc(r.description)+"</h4>"+
+              '<span class="chip '+(PRIORITY_CHIP[r.severity]||"chip--low")+'">'+esc(r.severity)+"</span>"+
+              '<span class="chip chip--code">'+esc(RISK_TYPE[r.type]||r.type)+"</span>"+
+              (r.resolved ? '<span class="chip chip--ok">해결됨</span>' : "")+"</div>"+
+            (r.evidence ? '<blockquote class="quote">“'+esc(r.evidence)+"”</blockquote>"
+                        : '<p class="dim" style="font-size:12px;margin:8px 0">전사문에서 인용할 근거를 찾지 못했습니다.</p>')+
+          "</div></div>";
+        }).join("")+"</div>" : emptyBox("○","확인된 위험신호가 없습니다",""))+
+      "</div><hr class=\"hr\">"+
+
+      "<div>"+'<div class="eyebrow" style="margin-bottom:10px">미해결 이슈 · '+(a.unresolved_issues||[]).length+"건</div>"+
+        ((a.unresolved_issues||[]).length
+          ? '<ul class="bullets">'+a.unresolved_issues.map(function(x){ return "<li>"+esc(x)+"</li>"; }).join("")+"</ul>"
+          : emptyBox("○","미해결 이슈가 없습니다",""))+
+      "</div><hr class=\"hr\">"+
+
+      "<div>"+'<div class="eyebrow" style="margin-bottom:10px">추천 Action · '+(a.recommended_actions||[]).length+"건</div>"+
+        ((a.recommended_actions||[]).length
+          ? '<div class="actions">'+a.recommended_actions.map(function(x){ return actionCard(x,{showDesc:true}); }).join("")+"</div>"+
+            '<p class="dim" style="font-size:11.5px;margin-top:9px">추천일 뿐이며 최종 판단은 상담자가 합니다. 체크박스로 완료 처리할 수 있습니다.</p>'
+          : emptyBox("○","추천된 Action이 없습니다",""))+
+      "</div>";
+  }
+  return '<div class="panel">'+head+'<div class="panel__body stack">'+body+"</div></div>";
+}
+
+function stepPanel(c, step){
+  if(step === "note")     return notePanel(c);
+  if(step === "analysis") return analysisPanel(c);
+  return transcriptPanel(c);
+}
+function bindStepPanel(root, c, step){
+  var id = c.id;
+  var ta = root.querySelector("#taTranscript");
+  if(ta) ta.addEventListener("input", function(){ state.transcriptDraft = ta.value; });
+
+  var tsave = root.querySelector("[data-tsave]");
+  if(tsave) tsave.addEventListener("click", function(){
+    var v = (state.transcriptDraft !== null ? state.transcriptDraft : (c.transcript||"")).trim();
+    if(!v){ toast("err","전사문이 비어 있습니다","최소 1자 이상 필요합니다."); return; }
+    tsave.disabled = true; tsave.textContent = "저장 중…";
+    api("/consultations/"+id+"/transcript", {method:"PATCH", body:{transcript:v}}).then(function(updated){
+      state.consultation = updated; state.transcriptDraft = null;
+      toast("ok","전사문을 저장했습니다","상태는 그대로 유지됩니다.");
+      renderWork();
+    }).catch(function(err){ tsave.disabled=false; tsave.textContent="수정 내용 저장"; toastErr(err); });
+  });
+
+  var tconf = root.querySelector("[data-tconfirm]");
+  if(tconf) tconf.addEventListener("click", function(){
+    var dirty = state.transcriptDraft !== null && state.transcriptDraft !== (c.transcript||"");
+    confirmModal("전사문 확정",
+      "확정하면 전사문은 <b>더 이상 수정할 수 없습니다.</b> 확정된 전사문을 근거로 상담일지 초안 생성이 시작됩니다."+
+      (dirty ? '<br><br><span style="color:var(--high)">저장하지 않은 수정 내용이 있습니다. 확정 전에 먼저 저장해 주세요.</span>' : ""),
+      "확정하고 상담일지 생성", function(){
+        return api("/consultations/"+id+"/transcript/confirm", {method:"POST"}).then(function(res){
+          toast("ok","전사문을 확정했습니다", STATUS_LABEL[res.status] || res.status);
+          state.note = null; state.noteErr = null; state.workPinned = false;
+          return loadConsultation(id, false);
+        });
+      });
+  });
+
+  var ns = root.querySelector("#nSummary"), nm = root.querySelector("#nMain");
+  function grabNote(){
+    var d = {summary:"", main_contents:"", client_status:{}};
+    d.summary = ns ? ns.value : "";
+    d.main_contents = nm ? nm.value : "";
+    root.querySelectorAll("[data-cat]").forEach(function(t){ d.client_status[t.dataset.cat] = t.value; });
+    state.noteDraft = d;
+    return d;
+  }
+  if(ns) ns.addEventListener("input", grabNote);
+  if(nm) nm.addEventListener("input", grabNote);
+  root.querySelectorAll("[data-cat]").forEach(function(t){ t.addEventListener("input", grabNote); });
+
+  var nsave = root.querySelector("[data-nsave]");
+  if(nsave) nsave.addEventListener("click", function(){
+    var d = grabNote();
+    var summary = d.summary.trim();
+    if(!summary){ toast("err","상담 요약이 비어 있습니다","1~5,000자로 입력해 주세요."); return; }
+    var payload = {summary: summary, main_contents: toLines(d.main_contents), client_status: {}};
+    CATS.forEach(function(cat){ payload.client_status[cat.key] = toLines(d.client_status[cat.key]); });
+    nsave.disabled = true; nsave.textContent = "저장 중…";
+    api("/consultations/"+id+"/counseling-note", {method:"PATCH", body:payload}).then(function(n){
+      state.note = n; state.noteDraft = null;
+      toast("ok","상담일지를 저장했습니다","확정 전까지는 계속 수정할 수 있습니다.");
+      renderWork();
+    }).catch(function(err){ nsave.disabled=false; nsave.textContent="저장"; toastErr(err); });
+  });
+
+  var nconf = root.querySelector("[data-nconfirm]");
+  if(nconf) nconf.addEventListener("click", function(){
+    confirmModal("상담일지 확정",
+      "확정하면 상담일지는 수정할 수 없습니다. <b>확정된 내용만</b> 위험신호·상태변화·추천 Action의 근거가 됩니다."+
+      "<br><br>지운 내용은 예전 초안에서 복원되지 않습니다.",
+      "확정하고 분석 시작", function(){
+        return api("/consultations/"+id+"/counseling-note/confirm", {method:"POST"}).then(function(res){
+          toast("ok","상담일지를 확정했습니다", STATUS_LABEL[res.status] || res.status);
+          state.analysis = null; state.analysisErr = null; state.workPinned = false;
+          return loadConsultation(id, false);
+        });
+      });
+  });
+
+  var nr = root.querySelector("[data-nretry]");
+  if(nr) nr.addEventListener("click", function(){ state.note=null; state.noteErr=null; renderWork(); loadStepData(id, c); });
+  var ar = root.querySelector("[data-aretry]");
+  if(ar) ar.addEventListener("click", function(){ state.analysis=null; state.analysisErr=null; renderWork(); loadStepData(id, c); });
+
+  bindActionCards(root, function(updated){
+    if(state.analysis && state.analysis.recommended_actions){
+      state.analysis.recommended_actions = state.analysis.recommended_actions.map(function(x){
+        return x.id === updated.id ? updated : x;
+      });
+    }
+    renderWork();
+  });
+}
+
+/* ============================================================
+   13. 화면 — 사례회의 리포트
+   ============================================================ */
+function openReport(clientId){
+  if(state.clientId !== clientId){ state.client = null; state.report = null; state.reportErr = null; }
+  state.clientId = clientId; syncNav(); renderReport();
+  if(!state.client){
+    api("/clients/"+clientId).then(function(c){
+      if(state.clientId !== clientId) return; state.client = c; renderReport();
+    }).catch(function(err){
+      if(state.clientId !== clientId) return; state.clientErr = err; renderReport();
+    });
+  }
+}
+function generateReport(){
+  var id = state.clientId;
+  state.reportLoading = true; state.reportErr = null; renderReport();
+  api("/clients/"+id+"/case-report", {method:"POST", body:{consultation_limit: state.reportLimit}, timeout:120000})
+    .then(function(r){
+      if(state.clientId !== id) return;
+      state.report = r; state.reportLoading = false; renderReport();
+      toast("ok","리포트를 생성했습니다","확정 상담 "+((r.consultation_ids||[]).length)+"건 종합");
+    })
+    .catch(function(err){
+      if(state.clientId !== id) return;
+      state.reportLoading = false; state.reportErr = err; renderReport();
+    });
+}
+function renderReport(){
+  var root = $("#screen-report"), c = state.client, r = state.report;
+  var limitOpts = "";
+  for(var i=3;i<=10;i++) limitOpts += '<option value="'+i+'"'+(state.reportLimit===i?" selected":"")+">"+i+"건</option>";
+
+  var main;
+  if(state.reportLoading){
+    main = '<div class="panel"><div class="working"><span class="spin"></span>확정 상담을 종합해 리포트를 만들고 있습니다…</div></div>';
+  } else if(state.reportErr){
+    main = '<div class="panel">'+(state.reportErr.code === "INSUFFICIENT_DATA"
+      ? emptyBox("○","완료된 상담이 없습니다","리포트는 <b>DONE 상담</b>을 근거로 만듭니다. 상담을 1건 이상 확정한 뒤 다시 시도해 주세요.")
+      : errorBox(state.reportErr, "data-rretry"))+"</div>";
+  } else if(!r){
+    main = '<div class="panel">'+emptyBox("▦","아직 생성된 리포트가 없습니다",
+      "왼쪽에서 사용할 상담 건수를 고르고 <b>리포트 생성</b>을 누르세요.<br>MVP에는 저장·재조회 API가 없어 매번 새로 생성합니다.")+"</div>";
+  } else {
+    var rp = r.report || {};
+    main =
+      '<div class="panel"><div class="panel__body stack">'+
+        '<div class="overview">'+esc(rp.client_overview||"")+
+          "<small>확정 상담 "+((r.consultation_ids||[]).length)+"건 · "+esc(fmtDT(r.generated_at)||"")+" 생성</small></div>"+
+        '<hr class="hr">'+
+        '<div><div class="eyebrow" style="margin-bottom:10px">최근 상태</div>'+statusGrid(rp.recent_status)+"</div>"+
+      "</div></div>"+
+      '<div class="panel"><div class="panel__body report">'+
+        reportCol("현재 위험신호", rp.current_risks)+
+        reportCol("미해결 이슈", rp.unresolved_issues)+
+        reportCol("지원 현황", rp.support_status)+
+        reportColOrdered("회의에서 논의할 내용", rp.discussion_points)+
+      "</div></div>";
+  }
+
+  var timeline = "";
+  if(r && r.report && (r.report.timeline||[]).length){
+    timeline = '<div class="panel"><div class="panel__head"><h2>주요 변화 Timeline</h2></div><div class="panel__body">'+
+      r.report.timeline.map(function(t){
+        return '<div class="tl"><span class="tl__d">'+esc(mmdd(t.consulted_at)||"")+"</span>"+
+          '<span class="tl__g"><span class="tl__o"></span><span class="tl__l"></span></span>'+
+          '<div class="tl__b"><h4>'+esc(t.description||"")+'</h4><p class="mono">상담 #'+esc(t.consultation_id)+"</p></div></div>";
+      }).join("")+"</div></div>";
+  }
+
+  root.innerHTML =
+    '<div class="pagehead"><h1>사례회의 리포트</h1>'+
+      (c ? '<span class="chip chip--pri">'+esc(c.name)+"</span>" : "")+
+      '<span class="chip chip--code">POST /clients/'+(state.clientId||"")+"/case-report</span>"+
+      '<span class="note">'+(r ? esc(fmtDT(r.generated_at)||"")+" 생성" : "확정된 DONE 상담만 사용합니다")+"</span></div>"+
+    '<div class="cols cols--detail">'+
+      '<aside class="stack noprint">'+
+        '<div class="panel"><div class="panel__head"><h2>생성 조건</h2></div><div class="panel__body stack" style="gap:12px">'+
+          '<div class="field"><label for="rLimit">사용할 최근 확정 상담</label>'+
+            '<select class="sel" id="rLimit">'+limitOpts+"</select>"+
+            '<span class="hint">3~10건. DONE 상담이 1~2건이면 있는 만큼만 사용합니다.</span></div>'+
+          '<button class="btn btn--primary btn--block" data-gen'+(state.reportLoading?" disabled":"")+">"+
+            (r ? "다시 생성" : "리포트 생성")+"</button>"+
+          (c ? '<button class="btn btn--block" data-goclient="'+c.id+'">내담자 상세로 이동</button>' : "")+
+        "</div></div>"+
+        timeline+
+        (r ? '<div class="panel"><div class="panel__head"><h2>내보내기</h2></div>'+
+          '<div class="panel__body stack" style="gap:8px">'+
+          '<button class="btn btn--block" data-copy>회의 자료로 복사</button>'+
+          '<button class="btn btn--block" data-print>인쇄용 보기</button></div></div>' : "")+
+      "</aside>"+
+      '<div class="stack">'+main+"</div>"+
+    "</div>";
+
+  var g = root.querySelector("[data-gen]"); if(g) g.addEventListener("click", generateReport);
+  var sel = root.querySelector("#rLimit"); if(sel) sel.addEventListener("change", function(){ state.reportLimit = Number(sel.value); });
+  var rr = root.querySelector("[data-rretry]"); if(rr) rr.addEventListener("click", generateReport);
+  root.querySelectorAll("[data-goclient]").forEach(function(b){
+    b.addEventListener("click", function(){ go("#/clients/"+b.dataset.goclient); });
+  });
+  var cp = root.querySelector("[data-copy]"); if(cp) cp.addEventListener("click", copyReport);
+  var pr = root.querySelector("[data-print]"); if(pr) pr.addEventListener("click", function(){ window.print(); });
+}
+function reportCol(title, items){
+  return "<div><h3>"+esc(title)+"</h3>"+
+    ((items||[]).length ? "<ul>"+items.map(function(x){ return "<li>"+esc(x)+"</li>"; }).join("")+"</ul>"
+      : '<p class="dim" style="font-size:12.5px">확인된 내용 없음</p>')+"</div>";
+}
+function reportColOrdered(title, items){
+  return "<div><h3>"+esc(title)+"</h3>"+
+    ((items||[]).length ? "<ol>"+items.map(function(x){ return "<li>"+esc(x)+"</li>"; }).join("")+"</ol>"
+      : '<p class="dim" style="font-size:12.5px">확인된 내용 없음</p>')+"</div>";
+}
+function copyReport(){
+  var r = state.report; if(!r) return;
+  var rp = r.report || {};
+  var out = [];
+  out.push("[사례회의 리포트] " + (state.client ? state.client.name : "내담자 #"+r.client_id));
+  out.push("생성: " + (fmtDT(r.generated_at)||"") + " · 사용 상담: " + (r.consultation_ids||[]).map(function(i){return "#"+i;}).join(", "));
+  out.push("");
+  out.push("■ 개요\n" + (rp.client_overview||"—"));
+  out.push("");
+  out.push("■ 최근 상태");
+  CATS.forEach(function(c){
+    var v = (rp.recent_status||{})[c.key] || [];
+    out.push("- " + c.label + ": " + (v.length ? v.join(", ") : "확인된 내용 없음"));
+  });
+  [["현재 위험신호", rp.current_risks], ["미해결 이슈", rp.unresolved_issues],
+   ["지원 현황", rp.support_status], ["회의에서 논의할 내용", rp.discussion_points]].forEach(function(p){
+    out.push(""); out.push("■ " + p[0]);
+    if((p[1]||[]).length) p[1].forEach(function(x,i){ out.push((i+1)+". "+x); });
+    else out.push("확인된 내용 없음");
+  });
+  var text = out.join("\n");
+  var done = function(){ toast("ok","클립보드에 복사했습니다","회의 자료에 그대로 붙여넣을 수 있습니다."); };
+  var fail = function(){ toast("err","복사하지 못했습니다","브라우저가 클립보드 접근을 차단했습니다."); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, function(){ legacyCopy(text) ? done() : fail(); });
+  } else { legacyCopy(text) ? done() : fail(); }
+}
+function legacyCopy(text){
+  try{
+    var t = document.createElement("textarea");
+    t.value = text; t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.appendChild(t); t.select();
+    var ok = document.execCommand("copy");
+    t.remove(); return ok;
+  }catch(e){ return false; }
+}
+
+/* ============================================================
+   14. 부팅
+   ============================================================ */
+function checkHealth(){
+  var el = $("#apiState"), t = $("#apiStateText");
+  api("/health/ready", {timeout:12000}).then(function(){
+    el.classList.add("is-up"); el.classList.remove("is-down");
+    t.textContent = "API 연결됨";
+    el.title = API_BASE;
+  }).catch(function(err){
+    el.classList.add("is-down"); el.classList.remove("is-up");
+    t.textContent = err.code === "NETWORK" ? "API 연결 실패" : ("API 오류 " + err.code);
+    el.title = API_BASE + " — " + err.message;
+    toast("err","API에 연결하지 못했습니다", err.message, 14000);
+  });
+}
+function initTheme(){
+  var saved = null;
+  try{ saved = localStorage.getItem("ieum-theme"); }catch(e){}
+  if(saved === "dark" || saved === "light") document.documentElement.setAttribute("data-theme", saved);
+  $("#themeToggle").addEventListener("click", function(){
+    var root = document.documentElement;
+    var cur = root.getAttribute("data-theme");
+    var next = cur === "dark" ? "light" : (cur === "light" ? "dark" :
+      (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "dark"));
+    root.setAttribute("data-theme", next);
+    try{ localStorage.setItem("ieum-theme", next); }catch(e){}
+  });
+}
+function initSearch(){
+  var input = $("#searchInput"), timer = null;
+  input.addEventListener("input", function(){
+    clearTimeout(timer);
+    timer = setTimeout(function(){
+      state.search = input.value.trim(); state.offset = 0;
+      if(state.screen !== "list") go("#/clients"); else loadClients();
+    }, 320);
+  });
+}
+function initNav(){
+  document.querySelectorAll(".navlink").forEach(function(l){
+    l.addEventListener("click", function(){
+      var n = l.dataset.nav;
+      if(n === "list")    go("#/clients");
+      if(n === "detail"   && state.clientId) go("#/clients/"+state.clientId);
+      if(n === "work"     && state.consultationId) go("#/consultations/"+state.consultationId);
+      if(n === "report"   && state.clientId) go("#/clients/"+state.clientId+"/report");
+      if(n === "tokens")  go("#/tokens");
+    });
+  });
+  $("#btnNewClient").addEventListener("click", openNewClient);
+}
+
+$("#tokBase").textContent = API_BASE.replace(/^https?:\/\//,"");
+initTheme(); initSearch(); initNav(); checkHealth();
+window.addEventListener("hashchange", route);
+document.addEventListener("visibilitychange", function(){
+  if(document.hidden) stopPoll();
+  else if(state.screen === "work" && state.consultation) scheduleNextPoll(state.consultationId, state.consultation);
+});
+route();
+
 })();
 </script>
 </body>
