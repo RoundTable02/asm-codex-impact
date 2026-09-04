@@ -25,6 +25,12 @@
 
 ## 장애·보안·운영
 
+- [ ] OpenAI의 문자열 Action·잘못된 enum·필드 누락 응답이 FAILED로 처리된다.
+- [ ] OpenAI 지연이 작업 제한 시간을 넘으면 FAILED로 처리된다.
+- [ ] DB 결과 커밋 실패 시 Risk/Action 부분 결과가 남지 않고 기존 상담일지가 보존된다.
+- [ ] Deploy Logs에서 `job_completed` 또는 `job_failed job_id=... error_type=...`를 확인한다.
+- [ ] 이전 버전 RUNNING 작업은 [복구 절차](./ANALYSIS_RECOVERY.md)에 따라 이전 배포 종료 후 처리한다.
+
 - [ ] STT/LLM 오류 시 상담이 FAILED가 되고, 이미 저장된 전사문·상담일지는 계속 조회 가능하다.
 - [ ] AI 응답의 evidence가 전사문에 없는 경우 null로 저장된다.
 - [ ] OpenAI 실패 원문, DB URL, 전사문, 상담일지, 음성 바이트가 로그나 오류 응답에 없다.

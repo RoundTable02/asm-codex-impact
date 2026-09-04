@@ -1,25 +1,30 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import uuid
 from contextlib import asynccontextmanager, suppress
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .ai import AIService, AIServiceError
-from .core import ConsultationStatus, Settings, api_error, empty_status, now
+from .ai_schemas import FollowUpOutput, NoteOutput
+from .core import ConsultationStatus, Settings, api_error, now
 from .db import Base, create_database
 from .models import ActionItem, Analysis, Client, Consultation, ProcessingJob, RiskFlag
 from .schemas import ActionUpdate, CaseReportRequest, ClientCreate, NoteUpdate, TranscriptUpdate
+
+logger = logging.getLogger("uvicorn.error")
 
 
 def utc(value: datetime) -> str:
@@ -144,14 +149,28 @@ async def job_loop(app: FastAPI) -> None:
                     )
                 ).scalar_one_or_none()
                 if job:
-                    job.state = "RUNNING"
+                    job_id = job.id
+                    claimed = await session.execute(
+                        update(ProcessingJob)
+                        .where(ProcessingJob.id == job_id, ProcessingJob.state == "QUEUED")
+                        .values(
+                            state="RUNNING",
+                            payload={
+                                **(job.payload or {}),
+                                "worker_version": 1,
+                                "started_at": now().isoformat(),
+                            },
+                        )
+                    )
                     await session.commit()
-                    await execute_job(app, job.id)
+                    if claimed.rowcount:
+                        await execute_job(app, job_id)
                 else:
                     await asyncio.sleep(app.state.settings.job_poll_seconds)
         except asyncio.CancelledError:
             raise
-        except Exception:
+        except Exception as exc:
+            logger.error("job_loop_failed error_type=%s", type(exc).__name__)
             await asyncio.sleep(1)
 
 
@@ -169,6 +188,54 @@ async def fail_job(
 
 
 async def execute_job(app: FastAPI, job_id: int) -> None:
+    try:
+        await asyncio.wait_for(
+            execute_job_result(app, job_id), timeout=app.state.settings.job_timeout_seconds
+        )
+    except asyncio.CancelledError:
+        # The result session is closed/rolled back before using a fresh failure session.
+        await record_job_failure(app, job_id, "CancelledError")
+        raise
+    except Exception as exc:
+        cause = f"/{type(exc.__cause__).__name__}" if exc.__cause__ else ""
+        await record_job_failure(app, job_id, type(exc).__name__ + cause)
+
+
+async def record_job_failure(app: FastAPI, job_id: int, error_type: str) -> None:
+    # Never log exception messages/tracebacks: DB errors may contain consultation data.
+    logger.error("job_failed job_id=%s error_type=%s", job_id, error_type)
+    for attempt in range(3):
+        try:
+            async with asyncio.timeout(10):
+                async with app.state.session_factory() as session:
+                    job = await session.get(ProcessingJob, job_id)
+                    if not job or job.state != "RUNNING":
+                        return
+                    consultation = await session.get(Consultation, job.consultation_id)
+                    if not consultation or consultation.status in {"DONE", "FAILED"}:
+                        return
+                    code = {
+                        "TRANSCRIBING": "STT_FAILED",
+                        "GENERATING_NOTE": "NOTE_GENERATION_FAILED",
+                        "ANALYZING": "ANALYSIS_FAILED",
+                    }[job.stage]
+                    await fail_job(session, consultation, job, code)
+                    if job.stage == "TRANSCRIBING" and (job.payload or {}).get("path"):
+                        with suppress(OSError):
+                            Path((job.payload or {})["path"]).unlink(missing_ok=True)
+                    return
+        except Exception as exc:
+            logger.error(
+                "job_failure_save_failed job_id=%s attempt=%s error_type=%s",
+                job_id,
+                attempt + 1,
+                type(exc).__name__,
+            )
+            if attempt < 2:
+                await asyncio.sleep(0.2 * (attempt + 1))
+
+
+async def execute_job_result(app: FastAPI, job_id: int) -> None:
     async with app.state.session_factory() as session:
         job = await session.get(ProcessingJob, job_id)
         if not job or job.state != "RUNNING":
@@ -186,23 +253,9 @@ async def execute_job(app: FastAPI, job_id: int) -> None:
                 consultation.transcript = transcript
                 consultation.status = ConsultationStatus.AWAITING_TRANSCRIPT_REVIEW
                 job.state = "DONE"
-                with suppress(OSError):
-                    path.unlink()
             elif job.stage == "GENERATING_NOTE":
                 note = await app.state.ai.note(consultation.transcript or "")
-                note = {
-                    "summary": str(note["summary"]).strip()[:5000],
-                    "main_contents": [
-                        str(v).strip()[:2000] for v in note.get("main_contents", [])[:100]
-                    ],
-                    "client_status": {
-                        key: [
-                            str(v).strip()[:2000]
-                            for v in note.get("client_status", {}).get(key, [])[:100]
-                        ]
-                        for key in empty_status()
-                    },
-                }
+                note = NoteOutput.model_validate(note).model_dump()
                 session.add(
                     Analysis(
                         consultation_id=consultation.id, counseling_note=note, analysis_json=None
@@ -238,6 +291,11 @@ async def execute_job(app: FastAPI, job_id: int) -> None:
                 result = await app.state.ai.analysis(
                     record.counseling_note, consultation.transcript or "", previous
                 )
+                result = FollowUpOutput.model_validate(result).model_dump()
+                if not previous:
+                    for change in result["important_changes"]:
+                        change["change"] = "UNKNOWN"
+                        change["previous"] = None
                 risks = result.get("risk_flags", [])
                 actions = result.get("recommended_actions", [])
                 for risk in risks:
@@ -258,8 +316,11 @@ async def execute_job(app: FastAPI, job_id: int) -> None:
                     days = action.get("due_in_days")
                     due = None
                     if isinstance(days, int) and 0 <= days <= 365:
-                        due = (consultation.consulted_at.astimezone().date()).fromordinal(
-                            consultation.consulted_at.astimezone().date().toordinal() + days
+                        consulted_at = consultation.consulted_at
+                        if consulted_at.tzinfo is None:
+                            consulted_at = consulted_at.replace(tzinfo=UTC)
+                        due = consulted_at.astimezone(ZoneInfo("Asia/Seoul")).date() + timedelta(
+                            days=days
                         )
                     session.add(
                         ActionItem(
@@ -282,20 +343,13 @@ async def execute_job(app: FastAPI, job_id: int) -> None:
                 consultation.status = ConsultationStatus.DONE
                 job.state = "DONE"
             await session.commit()
-        except (AIServiceError, KeyError, TypeError, ValueError):
+            if job.stage == "TRANSCRIBING":
+                with suppress(OSError):
+                    path.unlink(missing_ok=True)
+            logger.info("job_completed job_id=%s stage=%s", job_id, job.stage)
+        except BaseException:
             await session.rollback()
-            consultation = await required(session, Consultation, job.consultation_id, "상담")
-            job = await required(session, ProcessingJob, job_id, "작업")
-            await fail_job(
-                session,
-                consultation,
-                job,
-                "STT_FAILED"
-                if job.stage == "TRANSCRIBING"
-                else "NOTE_GENERATION_FAILED"
-                if job.stage == "GENERATING_NOTE"
-                else "ANALYSIS_FAILED",
-            )
+            raise
 
 
 def create_app() -> FastAPI:

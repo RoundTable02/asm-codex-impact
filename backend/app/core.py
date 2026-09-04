@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 
 from fastapi import HTTPException
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,6 +33,8 @@ class Settings(BaseSettings):
     cors_origins: str = "*"
     max_audio_bytes: int = 25 * 1024 * 1024
     job_poll_seconds: float = 0.2
+    job_timeout_seconds: float = Field(default=120, gt=0, le=600)
+    openai_timeout_seconds: float = Field(default=45, gt=0, le=120)
     case_report_timeout_seconds: int = 30
 
 
